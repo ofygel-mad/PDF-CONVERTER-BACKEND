@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     api_v1_prefix: str = "/api/v1"
     log_level: str = "INFO"
     app_host: str = Field(default="0.0.0.0", validation_alias=AliasChoices("APP_HOST"))
-    app_port: int = Field(default=8000, validation_alias=AliasChoices("APP_PORT"))
+    app_port: int = Field(default=8000, validation_alias=AliasChoices("APP_PORT", "PORT"))
     allowed_origins: Annotated[str, NoDecode] = Field(
         default="http://localhost:3000,http://127.0.0.1:3000",
         validation_alias=AliasChoices("ALLOWED_ORIGINS"),
