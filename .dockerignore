@@ -1,0 +1,25 @@
+# Never bake secrets or local state into the image
+.env
+.env.*
+
+# Local Python tooling
+.venv/
+.uv/
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# User data — mounted as a volume in production
+data/
+
+# Tests — not needed in the production image
+tests/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

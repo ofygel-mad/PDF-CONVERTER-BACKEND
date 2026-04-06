@@ -1,0 +1,97 @@
+{
+  "review_id": "4082e21dba1d4b4784317848c2d545a1",
+  "source_filename": "WhatsApp Image 2026-04-05 at 17.10.23.jpeg",
+  "lines": [
+    "baKnayneT",
+    "c4eT.xISX",
+    "PDF XLSX",
+    "3TOM中ane（y6paTbNWHNecHMBonbI3cyMM,pa3enNTbHXHa+-,",
+    "o6eeHNTbeTanBonepau,paCnonoxeHNeCTon6uoBTaKXe,Bpone",
+    "BCe,HOTbICaMTOXernAHb)",
+    "4 anp. B"
+  ],
+  "tables": [
+    {
+      "table_index": 0,
+      "rows": [
+        [
+          "baKnayneT",
+          "",
+          "",
+          ""
+        ],
+        [
+          "c4eT.xISX",
+          "",
+          "",
+          ""
+        ],
+        [
+          "PDF",
+          "XLSX",
+          "",
+          ""
+        ],
+        [
+          "3TOM中ane（y6paTbNWHNecHMBonbI3cyMM,pa3enNTbHXHa+-,",
+          "",
+          "",
+          ""
+        ],
+        [
+          "o6eeHNTbeTanBonepau,paCnonoxeHNeCTon6uoBTaKXe,Bpone",
+          "",
+          "",
+          ""
+        ],
+        [
+          "BCe,HOTbICaMTOXernAHb)",
+          "",
+          "",
+          ""
+        ],
+        [
+          "",
+          "",
+          "4 anp.",
+          "B"
+        ]
+      ],
+      "suggested_header_row_index": null
+    }
+  ],
+  "suggested_table_index": 0,
+  "suggested_header_row_index": null,
+  "available_fields": [
+    {
+      "key": "date",
+      "label": "Date",
+      "required": true
+    },
+    {
+      "key": "detail",
+      "label": "Detail / Counterparty",
+      "required": true
+    },
+    {
+      "key": "operation",
+      "label": "Operation",
+      "required": false
+    },
+    {
+      "key": "amount",
+      "label": "Net Amount",
+      "required": false
+    },
+    {
+      "key": "income",
+      "label": "Income",
+      "required": false
+    },
+    {
+      "key": "expense",
+      "label": "Expense",
+      "required": false
+    }
+  ]
+}

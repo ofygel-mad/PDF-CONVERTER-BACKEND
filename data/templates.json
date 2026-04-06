@@ -1,0 +1,836 @@
+[
+  {
+    "template_id": "c1f01cca6e1f4ea0ac0c344244042c64",
+    "parser_key": "kaspi_gold_statement",
+    "name": "Проверка порядка v2",
+    "description": "",
+    "base_variant_key": "classic_financier",
+    "columns": [
+      {
+        "key": "expense",
+        "label": "Расход",
+        "kind": "currency",
+        "enabled": true
+      },
+      {
+        "key": "date",
+        "label": "Дата операции",
+        "kind": "text",
+        "enabled": true
+      },
+      {
+        "key": "income",
+        "label": "Приход",
+        "kind": "currency",
+        "enabled": false
+      }
+    ],
+    "is_default": false,
+    "created_at": "2026-04-05T14:52:27.470461Z",
+    "updated_at": "2026-04-05T14:52:27.492378Z"
+  },
+  {
+    "template_id": "b864a736354d439c9dfd6b8e897df28d",
+    "parser_key": "kaspi_gold_statement",
+    "name": "Финансист компакт",
+    "description": "Только дата, расход и деталь",
+    "base_variant_key": "classic_financier",
+    "columns": [
+      {
+        "key": "date",
+        "label": "Дата",
+        "kind": "text",
+        "enabled": true
+      },
+      {
+        "key": "income",
+        "label": "Приход, ₸",
+        "kind": "currency",
+        "enabled": false
+      },
+      {
+        "key": "expense",
+        "label": "Расход, ₸",
+        "kind": "currency",
+        "enabled": true
+      },
+      {
+        "key": "details_operation",
+        "label": "Детали / Операция",
+        "kind": "text",
+        "enabled": true
+      }
+    ],
+    "is_default": true,
+    "created_at": "2026-04-05T14:52:27.415179Z",
+    "updated_at": "2026-04-05T14:52:27.415179Z"
+  },
+  {
+    "template_id": "e936569399ef40858581d58afa6b6426",
+    "parser_key": "kaspi_gold_statement",
+    "name": "Проверка порядка v2",
+    "description": "",
+    "base_variant_key": "classic_financier",
+    "columns": [
+      {
+        "key": "expense",
+        "label": "Расход",
+        "kind": "currency",
+        "enabled": true
+      },
+      {
+        "key": "date",
+        "label": "Дата операции",
+        "kind": "text",
+        "enabled": true
+      },
+      {
+        "key": "income",
+        "label": "Приход",
+        "kind": "currency",
+        "enabled": false
+      }
+    ],
+    "is_default": false,
+    "created_at": "2026-04-05T14:44:03.774997Z",
+    "updated_at": "2026-04-05T14:44:03.797562Z"
+  },
+  {
+    "template_id": "5596e87be02c40108c66a731c5eccd4d",
+    "parser_key": "kaspi_gold_statement",
+    "name": "Финансист компакт",
+    "description": "Только дата, расход и деталь",
+    "base_variant_key": "classic_financier",
+    "columns": [
+      {
+        "key": "date",
+        "label": "Дата",
+        "kind": "text",
+        "enabled": true
+      },
+      {
+        "key": "income",
+        "label": "Приход, ₸",
+        "kind": "currency",
+        "enabled": false
+      },
+      {
+        "key": "expense",
+        "label": "Расход, ₸",
+        "kind": "currency",
+        "enabled": true
+      },
+      {
+        "key": "details_operation",
+        "label": "Детали / Операция",
+        "kind": "text",
+        "enabled": true
+      }
+    ],
+    "is_default": false,
+    "created_at": "2026-04-05T14:44:03.740539Z",
+    "updated_at": "2026-04-05T14:44:03.740539Z"
+  },
+  {
+    "template_id": "284c30436e4d49e08e64e39e958e1a2a",
+    "parser_key": "kaspi_gold_statement",
+    "name": "Проверка порядка v2",
+    "description": "",
+    "base_variant_key": "classic_financier",
+    "columns": [
+      {
+        "key": "expense",
+        "label": "Расход",
+        "kind": "currency",
+        "enabled": true
+      },
+      {
+        "key": "date",
+        "label": "Дата операции",
+        "kind": "text",
+        "enabled": true
+      },
+      {
+        "key": "income",
+        "label": "Приход",
+        "kind": "currency",
+        "enabled": false
+      }
+    ],
+    "is_default": false,
+    "created_at": "2026-04-05T14:35:38.786253Z",
+    "updated_at": "2026-04-05T14:35:38.799255Z"
+  },
+  {
+    "template_id": "7ac525fbb10f47c6ab8ceb10659a8675",
+    "parser_key": "kaspi_gold_statement",
+    "name": "Финансист компакт",
+    "description": "Только дата, расход и деталь",
+    "base_variant_key": "classic_financier",
+    "columns": [
+      {
+        "key": "date",
+        "label": "Дата",
+        "kind": "text",
+        "enabled": true
+      },
+      {
+        "key": "income",
+        "label": "Приход, ₸",
+        "kind": "currency",
+        "enabled": false
+      },
+      {
+        "key": "expense",
+        "label": "Расход, ₸",
+        "kind": "currency",
+        "enabled": true
+      },
+      {
+        "key": "details_operation",
+        "label": "Детали / Операция",
+        "kind": "text",
+        "enabled": true
+      }
+    ],
+    "is_default": false,
+    "created_at": "2026-04-05T14:35:38.753558Z",
+    "updated_at": "2026-04-05T14:35:38.753558Z"
+  },
+  {
+    "template_id": "44f7cb72b6da4ebfae36e03f86b2e472",
+    "parser_key": "kaspi_gold_statement",
+    "name": "Проверка порядка v2",
+    "description": "",
+    "base_variant_key": "classic_financier",
+    "columns": [
+      {
+        "key": "expense",
+        "label": "Расход",
+        "kind": "currency",
+        "enabled": true
+      },
+      {
+        "key": "date",
+        "label": "Дата операции",
+        "kind": "text",
+        "enabled": true
+      },
+      {
+        "key": "income",
+        "label": "Приход",
+        "kind": "currency",
+        "enabled": false
+      }
+    ],
+    "is_default": false,
+    "created_at": "2026-04-05T14:26:13.963422Z",
+    "updated_at": "2026-04-05T14:26:14.013025Z"
+  },
+  {
+    "template_id": "b45059b7e3c94e88bd95bf7af21c8613",
+    "parser_key": "kaspi_gold_statement",
+    "name": "Финансист компакт",
+    "description": "Только дата, расход и деталь",
+    "base_variant_key": "classic_financier",
+    "columns": [
+      {
+        "key": "date",
+        "label": "Дата",
+        "kind": "text",
+        "enabled": true
+      },
+      {
+        "key": "income",
+        "label": "Приход, ₸",
+        "kind": "currency",
+        "enabled": false
+      },
+      {
+        "key": "expense",
+        "label": "Расход, ₸",
+        "kind": "currency",
+        "enabled": true
+      },
+      {
+        "key": "details_operation",
+        "label": "Детали / Операция",
+        "kind": "text",
+        "enabled": true
+      }
+    ],
+    "is_default": false,
+    "created_at": "2026-04-05T14:26:13.882504Z",
+    "updated_at": "2026-04-05T14:26:13.882504Z"
+  },
+  {
+    "template_id": "536c6f02a3e4404cb774a7b820faa2a9",
+    "parser_key": "kaspi_gold_statement",
+    "name": "Проверка порядка v2",
+    "description": "",
+    "base_variant_key": "classic_financier",
+    "columns": [
+      {
+        "key": "expense",
+        "label": "Расход",
+        "kind": "currency",
+        "enabled": true
+      },
+      {
+        "key": "date",
+        "label": "Дата операции",
+        "kind": "text",
+        "enabled": true
+      },
+      {
+        "key": "income",
+        "label": "Приход",
+        "kind": "currency",
+        "enabled": false
+      }
+    ],
+    "is_default": false,
+    "created_at": "2026-04-05T14:24:57.266600Z",
+    "updated_at": "2026-04-05T14:24:57.280621Z"
+  },
+  {
+    "template_id": "678c5c9e339e4dc9afcecf6a4968a147",
+    "parser_key": "kaspi_gold_statement",
+    "name": "Финансист компакт",
+    "description": "Только дата, расход и деталь",
+    "base_variant_key": "classic_financier",
+    "columns": [
+      {
+        "key": "date",
+        "label": "Дата",
+        "kind": "text",
+        "enabled": true
+      },
+      {
+        "key": "income",
+        "label": "Приход, ₸",
+        "kind": "currency",
+        "enabled": false
+      },
+      {
+        "key": "expense",
+        "label": "Расход, ₸",
+        "kind": "currency",
+        "enabled": true
+      },
+      {
+        "key": "details_operation",
+        "label": "Детали / Операция",
+        "kind": "text",
+        "enabled": true
+      }
+    ],
+    "is_default": false,
+    "created_at": "2026-04-05T14:24:57.240089Z",
+    "updated_at": "2026-04-05T14:24:57.240089Z"
+  },
+  {
+    "template_id": "9a27422e3c604774941c85a000083c9b",
+    "parser_key": "kaspi_gold_statement",
+    "name": "Проверка порядка v2",
+    "description": "",
+    "base_variant_key": "classic_financier",
+    "columns": [
+      {
+        "key": "expense",
+        "label": "Расход",
+        "kind": "currency",
+        "enabled": true
+      },
+      {
+        "key": "date",
+        "label": "Дата операции",
+        "kind": "text",
+        "enabled": true
+      },
+      {
+        "key": "income",
+        "label": "Приход",
+        "kind": "currency",
+        "enabled": false
+      }
+    ],
+    "is_default": false,
+    "created_at": "2026-04-05T14:11:31.441734Z",
+    "updated_at": "2026-04-05T14:11:31.453738Z"
+  },
+  {
+    "template_id": "166418cfd7164219abcb23c51e2fcc50",
+    "parser_key": "kaspi_gold_statement",
+    "name": "Финансист компакт",
+    "description": "Только дата, расход и деталь",
+    "base_variant_key": "classic_financier",
+    "columns": [
+      {
+        "key": "date",
+        "label": "Дата",
+        "kind": "text",
+        "enabled": true
+      },
+      {
+        "key": "income",
+        "label": "Приход, ₸",
+        "kind": "currency",
+        "enabled": false
+      },
+      {
+        "key": "expense",
+        "label": "Расход, ₸",
+        "kind": "currency",
+        "enabled": true
+      },
+      {
+        "key": "details_operation",
+        "label": "Детали / Операция",
+        "kind": "text",
+        "enabled": true
+      }
+    ],
+    "is_default": false,
+    "created_at": "2026-04-05T14:11:31.415070Z",
+    "updated_at": "2026-04-05T14:11:31.415070Z"
+  },
+  {
+    "template_id": "a0d68ca467fe480ea71a0e38a876bead",
+    "parser_key": "kaspi_gold_statement",
+    "name": "Проверка порядка v2",
+    "description": "",
+    "base_variant_key": "classic_financier",
+    "columns": [
+      {
+        "key": "expense",
+        "label": "Расход",
+        "kind": "currency",
+        "enabled": true
+      },
+      {
+        "key": "date",
+        "label": "Дата операции",
+        "kind": "text",
+        "enabled": true
+      },
+      {
+        "key": "income",
+        "label": "Приход",
+        "kind": "currency",
+        "enabled": false
+      }
+    ],
+    "is_default": false,
+    "created_at": "2026-04-05T14:07:48.706961Z",
+    "updated_at": "2026-04-05T14:07:48.736613Z"
+  },
+  {
+    "template_id": "1ecc3d403b164db6a60e169df0dcd151",
+    "parser_key": "kaspi_gold_statement",
+    "name": "Финансист компакт",
+    "description": "Только дата, расход и деталь",
+    "base_variant_key": "classic_financier",
+    "columns": [
+      {
+        "key": "date",
+        "label": "Дата",
+        "kind": "text",
+        "enabled": true
+      },
+      {
+        "key": "income",
+        "label": "Приход, ₸",
+        "kind": "currency",
+        "enabled": false
+      },
+      {
+        "key": "expense",
+        "label": "Расход, ₸",
+        "kind": "currency",
+        "enabled": true
+      },
+      {
+        "key": "details_operation",
+        "label": "Детали / Операция",
+        "kind": "text",
+        "enabled": true
+      }
+    ],
+    "is_default": false,
+    "created_at": "2026-04-05T14:07:48.547358Z",
+    "updated_at": "2026-04-05T14:07:48.547358Z"
+  },
+  {
+    "template_id": "eced1fe8187740a4aae33051e47f3c1c",
+    "parser_key": "kaspi_gold_statement",
+    "name": "Проверка порядка v2",
+    "description": "",
+    "base_variant_key": "classic_financier",
+    "columns": [
+      {
+        "key": "expense",
+        "label": "Расход",
+        "kind": "currency",
+        "enabled": true
+      },
+      {
+        "key": "date",
+        "label": "Дата операции",
+        "kind": "text",
+        "enabled": true
+      },
+      {
+        "key": "income",
+        "label": "Приход",
+        "kind": "currency",
+        "enabled": false
+      }
+    ],
+    "is_default": false,
+    "created_at": "2026-04-05T14:00:12.472668Z",
+    "updated_at": "2026-04-05T14:00:12.480752Z"
+  },
+  {
+    "template_id": "2a8735bd845d441cbc3b7f80920f92d9",
+    "parser_key": "kaspi_gold_statement",
+    "name": "Проверка порядка v2",
+    "description": "",
+    "base_variant_key": "classic_financier",
+    "columns": [
+      {
+        "key": "expense",
+        "label": "Расход",
+        "kind": "currency",
+        "enabled": true
+      },
+      {
+        "key": "date",
+        "label": "Дата операции",
+        "kind": "text",
+        "enabled": true
+      },
+      {
+        "key": "income",
+        "label": "Приход",
+        "kind": "currency",
+        "enabled": false
+      }
+    ],
+    "is_default": false,
+    "created_at": "2026-04-05T14:00:12.461602Z",
+    "updated_at": "2026-04-05T14:00:12.469669Z"
+  },
+  {
+    "template_id": "059292eac0c94e419c7172107c96255f",
+    "parser_key": "kaspi_gold_statement",
+    "name": "Финансист компакт",
+    "description": "Только дата, расход и деталь",
+    "base_variant_key": "classic_financier",
+    "columns": [
+      {
+        "key": "date",
+        "label": "Дата",
+        "kind": "text",
+        "enabled": true
+      },
+      {
+        "key": "income",
+        "label": "Приход, ₸",
+        "kind": "currency",
+        "enabled": false
+      },
+      {
+        "key": "expense",
+        "label": "Расход, ₸",
+        "kind": "currency",
+        "enabled": true
+      },
+      {
+        "key": "details_operation",
+        "label": "Детали / Операция",
+        "kind": "text",
+        "enabled": true
+      }
+    ],
+    "is_default": false,
+    "created_at": "2026-04-05T14:00:12.454081Z",
+    "updated_at": "2026-04-05T14:00:12.454081Z"
+  },
+  {
+    "template_id": "ed4bd1e5d3f447a8a48b6981c3562d39",
+    "parser_key": "kaspi_gold_statement",
+    "name": "Финансист компакт",
+    "description": "Только дата, расход и деталь",
+    "base_variant_key": "classic_financier",
+    "columns": [
+      {
+        "key": "date",
+        "label": "Дата",
+        "kind": "text",
+        "enabled": true
+      },
+      {
+        "key": "income",
+        "label": "Приход, ₸",
+        "kind": "currency",
+        "enabled": false
+      },
+      {
+        "key": "expense",
+        "label": "Расход, ₸",
+        "kind": "currency",
+        "enabled": true
+      },
+      {
+        "key": "details_operation",
+        "label": "Детали / Операция",
+        "kind": "text",
+        "enabled": true
+      }
+    ],
+    "is_default": false,
+    "created_at": "2026-04-05T14:00:12.443686Z",
+    "updated_at": "2026-04-05T14:00:12.443686Z"
+  },
+  {
+    "template_id": "c831e124de0041a69b297283c989fb64",
+    "parser_key": "kaspi_gold_statement",
+    "name": "Проверка порядка v2",
+    "description": "",
+    "base_variant_key": "classic_financier",
+    "columns": [
+      {
+        "key": "expense",
+        "label": "Расход",
+        "kind": "currency",
+        "enabled": true
+      },
+      {
+        "key": "date",
+        "label": "Дата операции",
+        "kind": "text",
+        "enabled": true
+      },
+      {
+        "key": "income",
+        "label": "Приход",
+        "kind": "currency",
+        "enabled": false
+      }
+    ],
+    "is_default": false,
+    "created_at": "2026-04-05T13:45:31.178901Z",
+    "updated_at": "2026-04-05T13:45:31.213514Z"
+  },
+  {
+    "template_id": "4277f82091044df48e6108d8b2b79e7e",
+    "parser_key": "kaspi_gold_statement",
+    "name": "Финансист компакт",
+    "description": "Только дата, расход и деталь",
+    "base_variant_key": "classic_financier",
+    "columns": [
+      {
+        "key": "date",
+        "label": "Дата",
+        "kind": "text",
+        "enabled": true
+      },
+      {
+        "key": "income",
+        "label": "Приход, ₸",
+        "kind": "currency",
+        "enabled": false
+      },
+      {
+        "key": "expense",
+        "label": "Расход, ₸",
+        "kind": "currency",
+        "enabled": true
+      },
+      {
+        "key": "details_operation",
+        "label": "Детали / Операция",
+        "kind": "text",
+        "enabled": true
+      }
+    ],
+    "is_default": false,
+    "created_at": "2026-04-05T13:45:31.053180Z",
+    "updated_at": "2026-04-05T13:45:31.053180Z"
+  },
+  {
+    "template_id": "f82d5da134664ff88b0f5d572b7ac848",
+    "parser_key": "kaspi_gold_statement",
+    "name": "Проверка порядка v2",
+    "description": "",
+    "base_variant_key": "classic_financier",
+    "columns": [
+      {
+        "key": "expense",
+        "label": "Расход",
+        "kind": "currency",
+        "enabled": true
+      },
+      {
+        "key": "date",
+        "label": "Дата операции",
+        "kind": "text",
+        "enabled": true
+      },
+      {
+        "key": "income",
+        "label": "Приход",
+        "kind": "currency",
+        "enabled": false
+      }
+    ],
+    "is_default": false,
+    "created_at": "2026-04-05T13:39:22.529211Z",
+    "updated_at": "2026-04-05T13:39:22.585995Z"
+  },
+  {
+    "template_id": "ce56b261e2dd4df888fc78eba0429cea",
+    "parser_key": "kaspi_gold_statement",
+    "name": "Финансист компакт",
+    "description": "Только дата, расход и деталь",
+    "base_variant_key": "classic_financier",
+    "columns": [
+      {
+        "key": "date",
+        "label": "Дата",
+        "kind": "text",
+        "enabled": true
+      },
+      {
+        "key": "income",
+        "label": "Приход, ₸",
+        "kind": "currency",
+        "enabled": false
+      },
+      {
+        "key": "expense",
+        "label": "Расход, ₸",
+        "kind": "currency",
+        "enabled": true
+      },
+      {
+        "key": "details_operation",
+        "label": "Детали / Операция",
+        "kind": "text",
+        "enabled": true
+      }
+    ],
+    "is_default": false,
+    "created_at": "2026-04-05T13:39:22.200202Z",
+    "updated_at": "2026-04-05T13:39:22.200202Z"
+  },
+  {
+    "template_id": "175ab91c579a451da914d3113df68376",
+    "parser_key": "kaspi_gold_statement",
+    "name": "????????????? ?????? v2",
+    "description": "????? ??????",
+    "base_variant_key": "classic_financier",
+    "columns": [
+      {
+        "key": "details_operation",
+        "label": "????????",
+        "kind": "text",
+        "enabled": true
+      },
+      {
+        "key": "expense",
+        "label": "??????",
+        "kind": "currency",
+        "enabled": true
+      },
+      {
+        "key": "date",
+        "label": "???? ????????",
+        "kind": "text",
+        "enabled": true
+      },
+      {
+        "key": "income",
+        "label": "??????",
+        "kind": "currency",
+        "enabled": false
+      }
+    ],
+    "is_default": false,
+    "created_at": "2026-04-05T13:39:17.404269Z",
+    "updated_at": "2026-04-05T13:39:17.417864Z"
+  },
+  {
+    "template_id": "135823ac98464ccda98b3ba5fae53a7c",
+    "parser_key": "kaspi_gold_statement",
+    "name": "??????? ??????",
+    "description": "?????? ????, ?????? ? ????????",
+    "base_variant_key": "classic_financier",
+    "columns": [
+      {
+        "key": "date",
+        "label": "Дата",
+        "kind": "text",
+        "enabled": true
+      },
+      {
+        "key": "income",
+        "label": "Приход, ₸",
+        "kind": "currency",
+        "enabled": false
+      },
+      {
+        "key": "expense",
+        "label": "Расход, ₸",
+        "kind": "currency",
+        "enabled": true
+      },
+      {
+        "key": "details_operation",
+        "label": "Детали / Операция",
+        "kind": "text",
+        "enabled": true
+      }
+    ],
+    "is_default": false,
+    "created_at": "2026-04-05T13:36:11.397067Z",
+    "updated_at": "2026-04-05T13:36:11.397067Z"
+  },
+  {
+    "template_id": "cddb5bb964c44e2594e8e9f90526ff9b",
+    "parser_key": "kaspi_gold_statement",
+    "name": "Финансист компакт",
+    "description": "Только дата, расход и деталь",
+    "base_variant_key": "classic_financier",
+    "columns": [
+      {
+        "key": "date",
+        "label": "Дата",
+        "kind": "text",
+        "enabled": true
+      },
+      {
+        "key": "income",
+        "label": "Приход, ₸",
+        "kind": "currency",
+        "enabled": false
+      },
+      {
+        "key": "expense",
+        "label": "Расход, ₸",
+        "kind": "currency",
+        "enabled": true
+      },
+      {
+        "key": "details_operation",
+        "label": "Детали / Операция",
+        "kind": "text",
+        "enabled": true
+      }
+    ],
+    "is_default": false,
+    "created_at": "2026-04-05T13:35:03.886494Z",
+    "updated_at": "2026-04-05T13:35:03.886494Z"
+  }
+]

@@ -1,0 +1,56 @@
+{
+  "metadata": {
+    "source_filename": "generic.xlsx",
+    "title": "Business Statement March",
+    "parser_key": "generic_bank_statement",
+    "account_holder": null,
+    "card_number": null,
+    "account_number": null,
+    "currency": null,
+    "period_start": null,
+    "period_end": null,
+    "opening_balance": null,
+    "closing_balance": null,
+    "transaction_count": 2,
+    "totals": {
+      "income_total": 12500.0,
+      "expense_total": 4800.0,
+      "purchase_total": 0.0,
+      "transfer_total": 0.0,
+      "topup_total": 0.0,
+      "cash_withdrawal_total": 0.0
+    }
+  },
+  "transactions": [
+    {
+      "date": "20.03.26",
+      "amount": 12500.0,
+      "income": 12500.0,
+      "expense": null,
+      "operation": "Incoming transfer",
+      "detail": "Client payment",
+      "details_operation": "Client paymentIncoming transfer",
+      "direction": "inflow",
+      "note": null,
+      "flags": [],
+      "source": "native",
+      "source_confidence": null,
+      "corrected": false
+    },
+    {
+      "date": "21.03.26",
+      "amount": -4800.0,
+      "income": null,
+      "expense": 4800.0,
+      "operation": "Outgoing transfer",
+      "detail": "Office rent",
+      "details_operation": "Office rentOutgoing transfer",
+      "direction": "outflow",
+      "note": null,
+      "flags": [],
+      "source": "native",
+      "source_confidence": null,
+      "corrected": false
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "metadata": {
+    "source_filename": "scan.jpeg",
+    "title": "Recovered statement",
+    "parser_key": "ocr_scanned_statement",
+    "account_holder": null,
+    "card_number": null,
+    "account_number": null,
+    "currency": null,
+    "period_start": null,
+    "period_end": null,
+    "opening_balance": null,
+    "closing_balance": null,
+    "transaction_count": 1,
+    "totals": {
+      "income_total": 1200.0,
+      "expense_total": 0.0,
+      "purchase_total": 0.0,
+      "transfer_total": 0.0,
+      "topup_total": 0.0,
+      "cash_withdrawal_total": 0.0
+    }
+  },
+  "transactions": [
+    {
+      "date": "05.04.26",
+      "amount": 1200.0,
+      "income": 1200.0,
+      "expense": null,
+      "operation": "Incoming transfer",
+      "detail": "Recovered client",
+      "details_operation": "Recovered client Incoming transfer",
+      "direction": "inflow",
+      "note": null,
+      "flags": [],
+      "source": "ocr",
+      "source_confidence": 0.7,
+      "corrected": false
+    }
+  ]
+}

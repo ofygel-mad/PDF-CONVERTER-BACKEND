@@ -1,0 +1,38 @@
+{
+  "metadata": {
+    "source_filename": "scan.jpeg",
+    "title": "Scanned statement",
+    "parser_key": "ocr_scanned_statement",
+    "account_holder": null,
+    "card_number": null,
+    "account_number": null,
+    "currency": null,
+    "period_start": null,
+    "period_end": null,
+    "opening_balance": null,
+    "closing_balance": null,
+    "transaction_count": 1,
+    "totals": {
+      "income_total": 1500.0,
+      "expense_total": 0.0,
+      "purchase_total": 0.0,
+      "transfer_total": 0.0,
+      "topup_total": 0.0,
+      "cash_withdrawal_total": 0.0
+    }
+  },
+  "transactions": [
+    {
+      "date": "05.04.26",
+      "amount": 1500.0,
+      "income": 1500.0,
+      "expense": null,
+      "operation": "Incoming transfer",
+      "detail": "Client payment",
+      "details_operation": "Client payment Incoming transfer",
+      "direction": "inflow",
+      "note": null,
+      "flags": []
+    }
+  ]
+}

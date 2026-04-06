@@ -1,0 +1,38 @@
+{
+  "metadata": {
+    "source_filename": "sample.xlsx",
+    "title": "ВЫПИСКА по Kaspi Gold за период с 08.03.26 по 20.03.26",
+    "parser_key": "kaspi_gold_statement",
+    "account_holder": "Асан Бақдəулет Талғатұлы",
+    "card_number": "*1309",
+    "account_number": "KZ34722C000054174918",
+    "currency": "тенге",
+    "period_start": "08.03.26",
+    "period_end": "20.03.26",
+    "opening_balance": 100426.14,
+    "closing_balance": 6731.71,
+    "transaction_count": 1,
+    "totals": {
+      "income_total": 7000.0,
+      "expense_total": 0.0,
+      "purchase_total": 0.0,
+      "transfer_total": 0.0,
+      "topup_total": 7000.0,
+      "cash_withdrawal_total": 0.0
+    }
+  },
+  "transactions": [
+    {
+      "date": "20.03.26",
+      "amount": 7000.0,
+      "income": 7000.0,
+      "expense": null,
+      "operation": "Пополнение",
+      "detail": "С Kaspi Депозита",
+      "details_operation": "С Kaspi ДепозитаПополнение",
+      "direction": "inflow",
+      "note": null,
+      "flags": []
+    }
+  ]
+}
