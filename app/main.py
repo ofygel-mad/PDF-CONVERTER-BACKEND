@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -27,13 +28,17 @@ def _run_migrations() -> None:
         init_database()
 
 
-@asynccontextmanager
-async def lifespan(_: FastAPI):
-    _run_migrations()
+async def _run_startup_task(task, timeout_seconds: float) -> None:
     try:
-        ensure_storage_buckets()
+        await asyncio.wait_for(asyncio.to_thread(task), timeout=timeout_seconds)
     except Exception:
         pass
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    await _run_startup_task(_run_migrations, settings.startup_db_timeout_seconds)
+    await _run_startup_task(ensure_storage_buckets, settings.startup_storage_timeout_seconds)
     yield
 
 

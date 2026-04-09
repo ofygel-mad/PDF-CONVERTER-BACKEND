@@ -19,6 +19,15 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     app_host: str = Field(default="0.0.0.0", validation_alias=AliasChoices("APP_HOST"))
     app_port: int = Field(default=8000, validation_alias=AliasChoices("APP_PORT", "PORT"))
+    app_reload: bool = Field(default=False, validation_alias=AliasChoices("APP_RELOAD", "UVICORN_RELOAD"))
+    startup_db_timeout_seconds: float = Field(
+        default=12.0,
+        validation_alias=AliasChoices("STARTUP_DB_TIMEOUT_SECONDS"),
+    )
+    startup_storage_timeout_seconds: float = Field(
+        default=8.0,
+        validation_alias=AliasChoices("STARTUP_STORAGE_TIMEOUT_SECONDS"),
+    )
     allowed_origins: Annotated[str, NoDecode] = Field(
         default="http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001",
         validation_alias=AliasChoices("ALLOWED_ORIGINS"),
