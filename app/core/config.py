@@ -49,6 +49,15 @@ class Settings(BaseSettings):
                 return v.replace("postgresql://", "postgresql+psycopg://", 1)
         return v
 
+    @field_validator("minio_secure", mode="before")
+    @classmethod
+    def parse_minio_secure(cls, v) -> bool:
+        if isinstance(v, bool):
+            return v
+        if isinstance(v, str):
+            return v.lower() in ("true", "1", "yes")
+        return False
+
     redis_url: str = Field(
         default="redis://localhost:6379/0",
         validation_alias=AliasChoices("REDIS_URL"),
@@ -62,12 +71,30 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("CELERY_RESULT_BACKEND", "REDIS_URL"),
     )
 
-    minio_endpoint: str = "localhost:9000"
-    minio_access_key: str = "minioadmin"
-    minio_secret_key: str = "minioadmin"
-    minio_secure: bool = False
-    minio_bucket_raw: str = "raw-documents"
-    minio_bucket_exports: str = "excel-exports"
+    minio_endpoint: str = Field(
+        default="localhost:9000",
+        validation_alias=AliasChoices("MINIO_ENDPOINT"),
+    )
+    minio_access_key: str = Field(
+        default="minioadmin",
+        validation_alias=AliasChoices("MINIO_ACCESS_KEY"),
+    )
+    minio_secret_key: str = Field(
+        default="minioadmin",
+        validation_alias=AliasChoices("MINIO_SECRET_KEY"),
+    )
+    minio_secure: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("MINIO_SECURE"),
+    )
+    minio_bucket_raw: str = Field(
+        default="raw-documents",
+        validation_alias=AliasChoices("MINIO_BUCKET_RAW"),
+    )
+    minio_bucket_exports: str = Field(
+        default="excel-exports",
+        validation_alias=AliasChoices("MINIO_BUCKET_EXPORTS"),
+    )
 
     azure_document_intelligence_endpoint: str | None = None
     azure_document_intelligence_key: str | None = None

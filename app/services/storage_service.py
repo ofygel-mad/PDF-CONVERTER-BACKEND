@@ -12,14 +12,20 @@ def get_minio_client() -> Minio:
         access_key=settings.minio_access_key,
         secret_key=settings.minio_secret_key,
         secure=settings.minio_secure,
+        region="us-east-1",  # Cloudflare R2 requires region
     )
 
 
 def ensure_storage_buckets() -> None:
-    client = get_minio_client()
-    for bucket_name in [settings.minio_bucket_raw, settings.minio_bucket_exports]:
-        if not client.bucket_exists(bucket_name):
-            client.make_bucket(bucket_name)
+    try:
+        client = get_minio_client()
+        for bucket_name in [settings.minio_bucket_raw, settings.minio_bucket_exports]:
+            if not client.bucket_exists(bucket_name):
+                client.make_bucket(bucket_name)
+    except Exception as e:
+        # Storage service not available - app can continue with limited functionality
+        import sys
+        print(f"Warning: Storage service unavailable: {e}", file=sys.stderr, flush=True)
 
 
 def get_storage_health() -> tuple[bool, str]:
