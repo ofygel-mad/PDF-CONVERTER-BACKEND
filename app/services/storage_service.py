@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import socket
 from minio import Minio
 from minio.error import S3Error
 
@@ -7,6 +8,8 @@ from app.core.config import settings
 
 
 def get_minio_client() -> Minio:
+    # Set socket timeout to 5 seconds to prevent hanging
+    socket.setdefaulttimeout(5)
     return Minio(
         settings.minio_endpoint,
         access_key=settings.minio_access_key,
@@ -19,13 +22,18 @@ def get_minio_client() -> Minio:
 def ensure_storage_buckets() -> None:
     try:
         client = get_minio_client()
-        for bucket_name in [settings.minio_bucket_raw, settings.minio_bucket_exports]:
-            if not client.bucket_exists(bucket_name):
-                client.make_bucket(bucket_name)
+        required_buckets = [settings.minio_bucket_raw, settings.minio_bucket_exports]
+        for bucket_name in required_buckets:
+            try:
+                if not client.bucket_exists(bucket_name):
+                    client.make_bucket(bucket_name)
+            except S3Error as e:
+                raise RuntimeError(f"Failed to access bucket '{bucket_name}': {e.code}")
     except Exception as e:
         # Storage service not available - app can continue with limited functionality
         import sys
-        print(f"Warning: Storage service unavailable: {e}", file=sys.stderr, flush=True)
+        print(f"⚠️  Storage service unavailable at startup: {e}", file=sys.stderr, flush=True)
+        print(f"Endpoint: {settings.minio_endpoint}", file=sys.stderr, flush=True)
 
 
 def get_storage_health() -> tuple[bool, str]:

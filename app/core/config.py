@@ -25,7 +25,7 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("STARTUP_DB_TIMEOUT_SECONDS"),
     )
     startup_storage_timeout_seconds: float = Field(
-        default=8.0,
+        default=3.0,
         validation_alias=AliasChoices("STARTUP_STORAGE_TIMEOUT_SECONDS"),
     )
     allowed_origins: Annotated[str, NoDecode] = Field(
