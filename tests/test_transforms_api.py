@@ -14,6 +14,7 @@ def test_parsers_endpoint_returns_supported_templates() -> None:
     assert response.status_code == 200
     payload = response.json()
     assert any(item["key"] == "kaspi_gold_statement" for item in payload)
+    assert any(item["key"] == "kaspi_business_statement" for item in payload)
     assert any(item["key"] == "ocr_scanned_statement" for item in payload)
     assert any(item["key"] == "generic_bank_statement" for item in payload)
 
@@ -173,6 +174,82 @@ def test_generic_bank_statement_autodetects_excel_table() -> None:
     assert any(item["key"] == "generic_bank_statement" and item["matched"] for item in payload["parser_matches"])
     assert payload["quality_summary"]["review_required_count"] >= 1
     assert any(item["flags"] for item in payload["row_diagnostics"])
+
+
+def test_kaspi_business_statement_preview_builds_compact_variant() -> None:
+    client = TestClient(app)
+    workbook = Workbook()
+    sheet = workbook.active
+    rows = [
+        ["Текущий счет:", None, "KZ68722S000009367266"],
+        ["Валюта счета:", None, "KZT"],
+        ["Период:", None, "03.04.2026 - 05.04.2026"],
+        ["Дата последнего движения:", None, "03.04.2026 23:11"],
+        ["ИИН/БИН:", None, "000305500863"],
+        ["Наименование:", None, "ИП UMMA TENDER ACADEMY"],
+        ["Входящий остаток:", None, 14770684.5],
+        ["Исходящий остаток:", None, 24047202.82],
+        [
+            "№\nдокумента",
+            "Дата операции",
+            "Дебет",
+            "Кредит",
+            "Наименование бенефициара / отправителя денег",
+            "ИИК бенефициара / отправителя денег",
+            "БИК банка бенефициара (отправителя денег)",
+            "КНП",
+            "Назначение платежа",
+        ],
+        [1, 2, 3, 4, 5, 6, 7, 8, 9],
+        [
+            "10232853",
+            "03.04.2026 21:40:05",
+            500000,
+            None,
+            "Мийрибек Азизулы У.",
+            "KZ31722C000032477139",
+            "",
+            "342",
+            "Перевод собственных средств на карту Kaspi Gold *3205",
+        ],
+        [
+            "10984841",
+            "03.04.2026 23:11:36",
+            None,
+            12109000,
+            'АО "KASPI BANK"\nИИН/БИН 971240001315',
+            "KZ78722S000009367280",
+            "",
+            "190",
+            "Продажи с Kaspi.kz за 03/04/2026",
+        ],
+    ]
+    for row in rows:
+        sheet.append(row)
+
+    stream = BytesIO()
+    workbook.save(stream)
+    stream.seek(0)
+
+    response = client.post(
+        "/api/v1/transforms/preview",
+        files={"file": ("kaspi-business.xlsx", stream.getvalue(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["document"]["parser_key"] == "kaspi_business_statement"
+    assert any(item["key"] == "kaspi_business_statement" and item["matched"] for item in payload["parser_matches"])
+
+    compact_variant = next(item for item in payload["variants"] if item["key"] == "business_compact_classic")
+    assert compact_variant["group"] == "kaspi_business_plus"
+    assert compact_variant["rows"][0]["document_number"] == "10232853"
+    assert compact_variant["rows"][0]["date"] == "03.04.2026"
+    assert compact_variant["rows"][0]["expense"] == 500000
+    assert compact_variant["rows"][0]["detail"] == "Мийрибек Азизулы У."
+    assert compact_variant["rows"][0]["comment"] == "Перевод собственных средств на карту Kaspi Gold *3205"
+    assert compact_variant["rows"][1]["income"] == 12109000
+    assert compact_variant["rows"][1]["detail"] == 'АО "KASPI BANK"'
 
 
 def test_scanned_image_statement_uses_ocr_parser(monkeypatch) -> None:

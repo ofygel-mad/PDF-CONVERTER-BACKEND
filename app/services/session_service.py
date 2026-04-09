@@ -96,8 +96,12 @@ def update_session_transaction(
             expense=round(abs(raw_amount), 2) if next_direction == "outflow" else None,
             operation=next_operation,
             detail=next_detail,
-            details_operation=f"{next_detail} {next_operation}".strip(),
+            details_operation=_compose_details_operation(next_detail, next_operation, current.comment),
             direction=next_direction,
+            document_number=current.document_number,
+            operation_datetime=current.operation_datetime,
+            comment=current.comment,
+            raw_counterparty=current.raw_counterparty,
             note=note if note is not None else current.note,
             flags=current.flags,
             source="manual_correction",
@@ -240,6 +244,12 @@ def _calculate_totals(transactions: list[StatementTransaction]) -> StatementTota
         if transaction.operation == "Снятие" and transaction.expense is not None:
             totals["cash_withdrawal_total"] += transaction.expense
     return StatementTotals(**{key: round(value, 2) for key, value in totals.items()})
+
+
+def _compose_details_operation(detail: str, operation: str, comment: str | None) -> str:
+    if comment:
+        return " | ".join(part for part in [detail, comment] if part)
+    return f"{detail} {operation}".strip()
 
 
 _FUZZY_THRESHOLD = 0.84  # minimum similarity to apply a fuzzy correction

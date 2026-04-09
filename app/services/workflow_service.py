@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from app.schemas.statement import AppliedRuleInfo, MaterializeOCRReviewRequest, ParserMatch
 from app.services.document_service import DocumentParseError, parse_statement_with_diagnostics
-from app.services.job_service import mark_job_completed
 from app.services.ocr_mapping_template_service import (
     find_best_ocr_mapping_match,
     get_ocr_mapping_template,

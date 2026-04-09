@@ -10,7 +10,6 @@ from fastapi.responses import StreamingResponse
 
 from app.schemas.statement import (
     AddOnboardingSampleRequest,
-    AIInsightsSummary,
     AppliedRuleInfo,
     CorrectionMemoryEntry,
     CreateOnboardingProjectRequest,
@@ -75,7 +74,6 @@ from app.services.session_service import (
 from app.services.template_service import create_template, list_templates, update_template
 from app.services.variant_service import apply_template_to_variant, build_template_seed, build_variants
 from app.services.vision_service import get_vision_status
-from app.services.workflow_service import process_preview_workflow
 from app.workers.tasks import preview_transform_job
 
 router = APIRouter(prefix="/transforms")

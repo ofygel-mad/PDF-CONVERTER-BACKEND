@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Annotated
 
-from pydantic import AliasChoices, Field
+from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     app_host: str = Field(default="0.0.0.0", validation_alias=AliasChoices("APP_HOST"))
     app_port: int = Field(default=8000, validation_alias=AliasChoices("APP_PORT", "PORT"))
     allowed_origins: Annotated[str, NoDecode] = Field(
-        default="http://localhost:3000,http://127.0.0.1:3000",
+        default="http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001",
         validation_alias=AliasChoices("ALLOWED_ORIGINS"),
     )
 
@@ -28,6 +28,18 @@ class Settings(BaseSettings):
         default="postgresql+psycopg://postgres:postgres@localhost:5433/pdf_converter",
         validation_alias=AliasChoices("DATABASE_URL"),
     )
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def normalize_database_url(cls, v: str) -> str:
+        # Railway (and Heroku) provide postgres:// or postgresql:// — psycopg3 needs +psycopg driver prefix
+        if isinstance(v, str):
+            if v.startswith("postgres://"):
+                return v.replace("postgres://", "postgresql+psycopg://", 1)
+            if v.startswith("postgresql://"):
+                return v.replace("postgresql://", "postgresql+psycopg://", 1)
+        return v
+
     redis_url: str = Field(
         default="redis://localhost:6379/0",
         validation_alias=AliasChoices("REDIS_URL"),

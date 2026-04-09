@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 from contextlib import contextmanager
-from functools import lru_cache
 from pathlib import Path
 
 from sqlalchemy import create_engine, text
@@ -85,15 +84,6 @@ def init_database() -> None:
     global _initialized
     if _initialized:
         return
-    from app.models.persistence import CorrectionMemoryRecord
-    from app.models.persistence import JobRecord
-    from app.models.persistence import OCRMappingTemplateRecord
-    from app.models.persistence import OCRReviewRecord
-    from app.models.persistence import OnboardingProjectRecord
-    from app.models.persistence import OnboardingSampleRecord
-    from app.models.persistence import PreferenceRecordDB
-    from app.models.persistence import SessionRecord
-    from app.models.persistence import TransformationTemplateRecord
 
     Base.metadata.create_all(bind=get_engine())
     _initialized = True

@@ -20,6 +20,10 @@ from app.schemas.statement import (
     StatementTotals,
     StatementTransaction,
 )
+from app.services.kaspi_business_statement import (
+    detect_kaspi_business_statement,
+    parse_kaspi_business_statement,
+)
 from app.services.ocr_service import OCRProcessingError, parse_ocr_statement
 
 DATE_PATTERN = re.compile(r"^\d{2}\.\d{2}\.\d{2}$")
@@ -127,6 +131,14 @@ def _registered_parsers() -> list[ParserDefinition]:
             parse=_parse_kaspi_statement,
         ),
         ParserDefinition(
+            key="kaspi_business_statement",
+            label="Kaspi Business Statement",
+            description="Structured Kaspi Business or Kaspi Pay account statements in Excel format.",
+            accepted_extensions=(".xlsx", ".xlsm"),
+            detect=_detect_kaspi_business_statement,
+            parse=_parse_kaspi_business_statement,
+        ),
+        ParserDefinition(
             key="ocr_scanned_statement",
             label="OCR Scanned Statement",
             description="OCR parser for scanned PDFs and image statements with table recovery before normalization.",
@@ -178,6 +190,20 @@ def _detect_ocr_statement(filename: str, content: bytes) -> float:
         sample_text = "\n".join(_normalize(document[index].get_text("text")) for index in range(min(2, document.page_count)))
         return 0.45 if len(sample_text.strip()) < 80 else 0.0
     return 0.0
+
+
+def _detect_kaspi_business_statement(filename: str, content: bytes) -> float:
+    extension = Path(filename).suffix.lower()
+    if extension not in {".xlsx", ".xlsm"}:
+        return 0.0
+    return detect_kaspi_business_statement(content)
+
+
+def _parse_kaspi_business_statement(filename: str, content: bytes) -> ParsedStatement:
+    try:
+        return parse_kaspi_business_statement(filename, content)
+    except ValueError as exc:
+        raise DocumentParseError(str(exc)) from exc
 
 
 def _parse_ocr_statement(filename: str, content: bytes) -> ParsedStatement:

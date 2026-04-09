@@ -39,6 +39,10 @@ class StatementTransaction(BaseModel):
     detail: str
     details_operation: str
     direction: str
+    document_number: str | None = None
+    operation_datetime: str | None = None
+    comment: str | None = None
+    raw_counterparty: str | None = None
     note: str | None = None
     flags: list[str] = Field(default_factory=list)
     source: str = "native"
@@ -77,6 +81,7 @@ class PreviewVariant(BaseModel):
     description: str
     columns: list[PreviewColumn]
     rows: list[dict[str, str | float | int | None]]
+    group: str = "primary"
     template_id: str | None = None
     base_variant_key: str | None = None
 
