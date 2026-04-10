@@ -15,35 +15,43 @@ log = logging.getLogger(__name__)
 
 def _run_migrations() -> None:
     """Apply pending Alembic migrations, fall back to create_all for SQLite."""
+    log.info("Starting migrations...")
     db_url = get_resolved_database_url()
-    log.info("DB URL resolved to driver: %s", db_url.split("://")[0] if "://" in db_url else db_url)
+    db_driver = db_url.split("://")[0] if "://" in db_url else db_url
+    log.info("DB URL resolved to driver: %s", db_driver)
+
     if db_url.startswith("sqlite"):
-        log.info("SQLite detected — skipping alembic, running create_all")
+        log.info("SQLite detected, skipping alembic and running create_all")
         init_database()
+        log.info("Database initialized with SQLite")
         return
+
+    log.info("PostgreSQL detected, attempting alembic migrations")
     try:
         from alembic import command
         from alembic.config import Config
 
         alembic_cfg = Config("alembic.ini")
         alembic_cfg.set_main_option("sqlalchemy.url", db_url)
+        log.info("Running alembic upgrade to head...")
         command.upgrade(alembic_cfg, "head")
         log.info("Alembic migrations applied successfully")
     except Exception as exc:
-        log.warning("Alembic failed (%s: %s) — falling back to create_all", type(exc).__name__, exc)
+        log.warning("Alembic failed (%s: %s), falling back to create_all", type(exc).__name__, exc)
         log.debug(traceback.format_exc())
         try:
+            log.info("Attempting create_all fallback...")
             init_database()
             log.info("create_all fallback succeeded")
         except Exception as exc2:
-            log.error("create_all fallback ALSO failed: %s: %s", type(exc2).__name__, exc2)
+            log.error("create_all fallback also failed: %s: %s", type(exc2).__name__, exc2)
             log.error(traceback.format_exc())
             raise
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    log.info("Application startup — running migrations")
+    log.info("Application startup, running migrations")
     try:
         _run_migrations()
     except Exception as exc:

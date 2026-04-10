@@ -1,14 +1,17 @@
 from __future__ import annotations
 
+import logging
 import os
 from contextlib import contextmanager
 from pathlib import Path
 
 from sqlalchemy import create_engine, text
-from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.core.config import settings
+
+
+log = logging.getLogger(__name__)
 
 
 class Base(DeclarativeBase):
@@ -39,15 +42,22 @@ def get_engine():
 
     primary_url = _pick_database_url()
     fallback_url = _default_sqlite_url()
-    connect_args = {"check_same_thread": False} if primary_url.startswith("sqlite") else {}
+    connect_args = {"check_same_thread": False} if primary_url.startswith("sqlite") else {"connect_timeout": 10}
+
+    safe_url = primary_url.split("@")[-1] if "@" in primary_url else "database"
+    log.info("Attempting to connect to database at %s", safe_url)
+
     try:
-        engine = create_engine(primary_url, future=True, pool_pre_ping=True, connect_args=connect_args)
+        engine = create_engine(primary_url, future=True, pool_pre_ping=True, connect_args=connect_args, echo_pool=True)
         with engine.connect() as connection:
+            log.info("Executing database probe query")
             connection.execute(text("SELECT 1"))
+            log.info("Primary database connection established")
         _engine = engine
         _resolved_database_url = primary_url
         return _engine
-    except SQLAlchemyError:
+    except Exception as exc:
+        log.warning("Primary DB connection failed, falling back to SQLite: %s", exc)
         connect_args = {"check_same_thread": False}
         _engine = create_engine(fallback_url, future=True, pool_pre_ping=True, connect_args=connect_args)
         _resolved_database_url = fallback_url
