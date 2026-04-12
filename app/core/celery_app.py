@@ -14,7 +14,8 @@ celery_app = Celery(
 )
 
 # Use "solo" pool in dev/test (no subprocess overhead), "prefork" in production.
-_worker_pool = "solo" if os.getenv("ENVIRONMENT", "development") != "production" else "prefork"
+_worker_pool = os.getenv("CELERY_POOL", "solo" if os.getenv("ENVIRONMENT", "development") != "production" else "prefork")
+_worker_concurrency = int(os.getenv("CELERY_CONCURRENCY", "2"))
 
 celery_app.conf.update(
     task_serializer="json",
@@ -25,6 +26,7 @@ celery_app.conf.update(
     broker_connection_retry_on_startup=True,
     worker_prefetch_multiplier=1,
     worker_pool=_worker_pool,
+    worker_concurrency=_worker_concurrency,
     # Keep results for 24 h then expire to avoid Redis bloat
     result_expires=86400,
     # Dead-letter: tasks that exhaust retries land in a dedicated queue
