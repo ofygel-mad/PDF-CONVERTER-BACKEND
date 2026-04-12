@@ -25,4 +25,5 @@ RUN mkdir -p /app/data/sessions /app/data/ocr-reviews /app/data/job-uploads
 
 EXPOSE 8000
 
-CMD ["python", "main.py"]
+# Run migrations before starting the app
+ENTRYPOINT ["sh", "-c", "python -c 'from app.core.database import get_resolved_database_url, init_database; from app.main import _run_migrations; _run_migrations()' && python main.py"]

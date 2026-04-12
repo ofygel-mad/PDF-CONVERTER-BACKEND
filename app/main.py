@@ -51,13 +51,9 @@ def _run_migrations() -> None:
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    log.info("Application startup, running migrations")
-    try:
-        _run_migrations()
-    except Exception as exc:
-        log.critical("Startup failed during migrations: %s: %s", type(exc).__name__, exc)
-        log.critical(traceback.format_exc())
-        raise
+    log.info("Application startup, skipping migrations (will run separately)")
+    # Note: Migrations should be run separately or before deployment
+    # to avoid blocking application startup
     try:
         ensure_storage_buckets()
         log.info("Storage buckets verified")
