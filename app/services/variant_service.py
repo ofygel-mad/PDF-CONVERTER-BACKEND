@@ -328,6 +328,8 @@ def _build_halyk_fiz_variants(transactions) -> list[PreviewVariant]:
                     kind="currency",
                 ),
                 PreviewColumn(key="comment", label="\u041a\u043e\u043c\u043c\u0435\u043d\u0442\u0430\u0440\u0438\u0439"),
+                PreviewColumn(key="aux_summary", label=""),
+                PreviewColumn(key="aux_detail", label="\u041e\u043f\u0438\u0441\u0430\u043d\u0438\u0435 \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0438"),
             ],
             rows=_build_halyk_fiz_rows(transactions),
             group=PRIMARY_GROUP,
@@ -407,23 +409,22 @@ def _merge_halyk_usd_to_kzt(transactions) -> list:
 def _build_halyk_fiz_rows(transactions) -> list[dict[str, object | None]]:
     rows: list[dict[str, object | None]] = []
     purchase_groups, negative_groups, positive_groups = _plan_halyk_fx_groups(transactions)
-    emitted_groups: set[int] = set()
 
     for source_row_number, tx in enumerate(transactions, start=1):
         if tx.operation != "autoconv":
             group = purchase_groups.get(source_row_number)
-            if group is None:
-                rows.append(_build_halyk_native_row(tx, source_row_number))
-                continue
-
-            group_id = id(group)
-            if group_id in emitted_groups:
-                continue
-            if source_row_number != group["first_purchase_row"]:
-                continue
-
-            rows.extend(_build_halyk_fx_group_rows(group))
-            emitted_groups.add(group_id)
+            row = _build_halyk_native_row(tx, source_row_number)
+            if group is not None and _halyk_group_needs_summary(group):
+                row["comment"] = _append_halyk_summary_comment(row.get("comment"), group["summary"])
+                if _halyk_group_summary_in_aux(
+                    group_size=len(group["matched"]),
+                    compact_total=_halyk_positive_before_negative(
+                        group["positive_source_row_number"],
+                        group["negative_source_row_number"],
+                    ),
+                ):
+                    row["aux_summary"] = group["summary"]
+            rows.append(row)
             continue
 
         if tx.income is not None:
@@ -431,10 +432,7 @@ def _build_halyk_fiz_rows(transactions) -> list[dict[str, object | None]]:
             if group is None:
                 rows.append(_build_halyk_native_row(tx, source_row_number))
                 continue
-            if id(group) in emitted_groups:
-                continue
-            rows.extend(_build_halyk_fx_group_rows(group))
-            emitted_groups.add(id(group))
+            rows.extend(_build_halyk_fx_currency_rows(group, tx, source_row_number))
             continue
 
         if tx.expense is None:
@@ -445,12 +443,20 @@ def _build_halyk_fiz_rows(transactions) -> list[dict[str, object | None]]:
         if group is None:
             rows.append(_build_halyk_native_row(tx, source_row_number))
             continue
-        if id(group) in emitted_groups:
-            continue
-        if source_row_number != group["negative_source_row_number"]:
-            continue
-        rows.extend(_build_halyk_fx_group_rows(group))
-        emitted_groups.add(id(group))
+        rows.extend(
+            _build_halyk_fx_kzt_rows(
+                matched=group["matched"],
+                allocations=group["allocations"],
+                autoconv_tx=tx,
+                source_row_number=source_row_number,
+                summary=group["summary"],
+                summary_enabled=_halyk_group_needs_summary(group),
+                compact_total=_halyk_positive_before_negative(
+                    group["positive_source_row_number"],
+                    group["negative_source_row_number"],
+                ),
+            )
+        )
 
     return rows
 
@@ -503,7 +509,6 @@ def _plan_halyk_fx_groups(transactions):
             "negative_source_row_number": source_row_number,
             "positive_tx": None,
             "positive_source_row_number": None,
-            "first_purchase_row": min(item["source_row_number"] for item in matched),
         }
         negative_groups[source_row_number] = group
         for item in matched:
@@ -527,6 +532,8 @@ def _build_halyk_native_row(tx, source_row_number: int) -> dict[str, object | No
         "income": tx.income,
         "expense": tx.expense,
         "comment": _normalize_halyk_comment(tx.comment),
+        "aux_summary": None,
+        "aux_detail": _clean_halyk_detail(tx.detail),
         "direction": tx.direction,
         "_source_row_number": source_row_number,
         "_provenance": tx.source,
@@ -611,9 +618,8 @@ def _allocate_halyk_kzt_amounts(total_kzt: float, matched: list[dict[str, object
 
 def _build_halyk_fx_summary(currency: str, fx_total: float, kzt_total: float) -> str:
     return (
-        f"\u041e\u0431\u0449\u0430\u044f \u043a\u043e\u043d\u0432\u0435\u0440\u0442\u0430\u0446\u0438\u044f: "
-        f"{_format_halyk_amount(fx_total)} {currency} = "
-        f"{_format_halyk_amount(kzt_total)} KZT"
+        f"(\u041e\u0431\u0449\u0438\u0439 {_format_halyk_compact_amount(fx_total)} {currency.lower()} = "
+        f"\u0432 kzt \u043e\u0431\u0449\u0438\u0439 {_format_halyk_amount(kzt_total)})"
     )
 
 
@@ -630,23 +636,38 @@ def _build_halyk_fx_kzt_rows(
     autoconv_tx,
     source_row_number: int,
     summary: str,
+    summary_enabled: bool,
+    compact_total: bool,
 ) -> list[dict[str, object | None]]:
     rows: list[dict[str, object | None]] = []
+    summary_in_aux = _halyk_group_summary_in_aux(
+        group_size=len(matched),
+        compact_total=compact_total,
+    )
     for item, allocation in zip(matched, allocations, strict=False):
         purchase_tx = item["transaction"]
         rows.append(
             {
                 "processing_date": autoconv_tx.processing_date or autoconv_tx.date,
                 "currency_op": "KZT",
-                "detail": (
-                    f"\u041a\u043e\u043d\u0432\u0435\u0440\u0442\u0430\u0446\u0438\u044f \u0432 KZT \u043f\u043e "
-                    f"\u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0438 {_clean_halyk_detail(purchase_tx.detail)}"
+                "detail": _build_halyk_autoconv_detail(
+                    purchase_tx=purchase_tx,
+                    row_currency="KZT",
+                    group_size=len(matched),
+                    group_total=autoconv_tx.expense or 0.0,
+                    compact_total=compact_total,
                 ),
                 "income": None,
                 "expense": allocation,
-                "comment": _append_halyk_summary_comment(
-                    f"\u0414\u0430\u0442\u0430 \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0438: {autoconv_tx.date}",
-                    summary,
+                "comment": _halyk_build_comment(autoconv_tx.date, summary, summary_enabled),
+                "aux_summary": summary if summary_in_aux else None,
+                "aux_detail": _halyk_generated_aux_detail(
+                    purchase_tx=purchase_tx,
+                    index=len(rows),
+                    total=len(matched),
+                    row_currency="KZT",
+                    group_size=len(matched),
+                    compact_total=compact_total,
                 ),
                 "direction": "outflow",
                 "_source_row_number": source_row_number,
@@ -658,54 +679,46 @@ def _build_halyk_fx_kzt_rows(
     return rows
 
 
-def _build_halyk_fx_group_rows(group: dict[str, object]) -> list[dict[str, object | None]]:
-    rows: list[dict[str, object | None]] = []
-    for item in group["matched"]:
-        tx = item["transaction"]
-        row = _build_halyk_native_row(tx, item["source_row_number"])
-        row["comment"] = _append_halyk_summary_comment(row.get("comment"), group["summary"])
-        rows.append(row)
-
-    rows.extend(
-        _build_halyk_fx_kzt_rows(
-            matched=group["matched"],
-            allocations=group["allocations"],
-            autoconv_tx=group["negative_tx"],
-            source_row_number=group["negative_source_row_number"],
-            summary=group["summary"],
-        )
-    )
-
-    if group["positive_tx"] is not None and group["positive_source_row_number"] is not None:
-        rows.extend(
-            _build_halyk_fx_currency_rows(
-                group,
-                group["positive_tx"],
-                group["positive_source_row_number"],
-            )
-        )
-
-    return rows
-
-
 def _build_halyk_fx_currency_rows(group: dict[str, object], autoconv_tx, source_row_number: int) -> list[dict[str, object | None]]:
     rows: list[dict[str, object | None]] = []
     currency = group["currency"] or "FX"
-    for item in group["matched"]:
+    matched_items = list(group["matched"])
+    compact_total = _halyk_positive_before_negative(group["positive_source_row_number"], group["negative_source_row_number"])
+    if compact_total:
+        matched_items = list(reversed(matched_items))
+
+    summary_in_aux = _halyk_group_summary_in_aux(
+        group_size=len(group["matched"]),
+        compact_total=compact_total,
+    )
+    for item in matched_items:
         purchase_tx = item["transaction"]
         rows.append(
             {
                 "processing_date": autoconv_tx.processing_date or autoconv_tx.date,
                 "currency_op": currency,
-                "detail": (
-                    f"\u041a\u043e\u043d\u0432\u0435\u0440\u0442\u0430\u0446\u0438\u044f \u0432 {currency} \u043f\u043e "
-                    f"\u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0438 {_clean_halyk_detail(purchase_tx.detail)}"
+                "detail": _build_halyk_autoconv_detail(
+                    purchase_tx=purchase_tx,
+                    row_currency=currency,
+                    group_size=len(group["matched"]),
+                    group_total=_extract_halyk_fx_total(autoconv_tx),
+                    compact_total=False,
                 ),
                 "income": purchase_tx.expense,
                 "expense": None,
-                "comment": _append_halyk_summary_comment(
-                    f"\u0414\u0430\u0442\u0430 \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0438: {autoconv_tx.date}",
+                "comment": _halyk_build_comment(
+                    autoconv_tx.date,
                     group["summary"],
+                    _halyk_group_needs_summary(group),
+                ),
+                "aux_summary": group["summary"] if summary_in_aux else None,
+                "aux_detail": _halyk_generated_aux_detail(
+                    purchase_tx=purchase_tx,
+                    index=len(rows),
+                    total=len(group["matched"]),
+                    row_currency=currency,
+                    group_size=len(group["matched"]),
+                    compact_total=compact_total,
                 ),
                 "direction": "inflow",
                 "_source_row_number": source_row_number,
@@ -720,8 +733,8 @@ def _build_halyk_fx_currency_rows(group: dict[str, object], autoconv_tx, source_
 def _normalize_halyk_comment(comment: str | None) -> str | None:
     if comment is None:
         return None
-    if comment.startswith("\u0414\u0430\u0442\u0430 \u0442\u0440:"):
-        return comment.replace("\u0414\u0430\u0442\u0430 \u0442\u0440:", "\u0414\u0430\u0442\u0430 \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0438:", 1)
+    if comment.startswith("\u0414\u0430\u0442\u0430 \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0438:"):
+        return comment.replace("\u0414\u0430\u0442\u0430 \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0438:", "\u0414\u0430\u0442\u0430 \u0442\u0440:", 1)
     return comment
 
 
@@ -732,6 +745,78 @@ def _format_halyk_amount(value: float) -> str:
     elif text.endswith("0"):
         text = text[:-1]
     return text.replace(",", " ").replace(".", ",")
+
+
+def _format_halyk_compact_amount(value: float) -> str:
+    text = f"{round(value, 2):.2f}".replace(".", ",")
+    if len(text) >= 4 and text[-3:-1] == ",0":
+        return text[:-3] + "," + text[-1]
+    if text.endswith(",00"):
+        return text[:-3]
+    if text.endswith("0"):
+        return text[:-1]
+    return text
+
+
+def _halyk_group_needs_summary(group: dict[str, object]) -> bool:
+    return len(group["matched"]) > 1
+
+
+def _halyk_build_comment(date_str: str, summary: str, summary_enabled: bool) -> str:
+    base = f"\u0414\u0430\u0442\u0430 \u0442\u0440: {date_str}"
+    if not summary_enabled:
+        return base
+    return _append_halyk_summary_comment(base, summary)
+
+
+def _build_halyk_autoconv_detail(
+    *,
+    purchase_tx,
+    row_currency: str,
+    group_size: int,
+    group_total: float,
+    compact_total: bool,
+) -> str:
+    base = f"{_clean_halyk_detail(purchase_tx.detail)} - (\u0410\u0432\u0442\u043e. \u041a\u043e\u043d\u0432)"
+    if group_size <= 1:
+        return base
+    if row_currency == "KZT":
+        total = _format_halyk_compact_amount(group_total) if compact_total else _format_halyk_amount(group_total)
+    else:
+        total = _format_halyk_compact_amount(group_total)
+    return f"{base} - (\u043e\u0431\u0449\u0438\u0439 {total})"
+
+
+def _halyk_positive_before_negative(
+    positive_source_row_number: int | None,
+    negative_source_row_number: int | None,
+) -> bool:
+    return (
+        positive_source_row_number is not None
+        and negative_source_row_number is not None
+        and positive_source_row_number < negative_source_row_number
+    )
+
+
+def _halyk_group_summary_in_aux(*, group_size: int, compact_total: bool) -> bool:
+    return group_size > 1 and not compact_total
+
+
+def _halyk_generated_aux_detail(
+    *,
+    purchase_tx,
+    index: int,
+    total: int,
+    row_currency: str,
+    group_size: int,
+    compact_total: bool,
+) -> str | None:
+    autoconv_text = "\u0410\u0432\u0442\u043e\u043a\u043e\u043d\u0432\u0435\u0440\u0442\u0430\u0446\u0438\u044f \u0434\u043e\u043f\u043e\u043b\u043d\u0438\u0442\u0435\u043b\u044c\u043d\u043e\u0439 \u0441\u0443\u043c\u043c\u044b \u043f\u043e \u043f\u0440\u043e\u0448\u0435\u0434\u0448\u0438\u043c \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u044f\u043c"
+    if _halyk_group_summary_in_aux(group_size=group_size, compact_total=compact_total):
+        return autoconv_text
+    if group_size > 1 and compact_total:
+        return autoconv_text if index == total - 1 else None
+    return _clean_halyk_detail(purchase_tx.detail) if row_currency == "KZT" else autoconv_text
 
 
 def _build_ai_variant(transactions) -> PreviewVariant:

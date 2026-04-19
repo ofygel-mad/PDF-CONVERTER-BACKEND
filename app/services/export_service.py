@@ -71,8 +71,12 @@ def export_statement(
     sheet.title = "Preview Export"
     audit_sheet = workbook.create_sheet("Audit Trail")
 
-    _write_metadata(sheet, statement, len(variant.columns))
-    header_row = 9
+    include_metadata = statement.metadata.parser_key != "halyk_fiz_statement"
+    if include_metadata:
+        _write_metadata(sheet, statement, len(variant.columns))
+        header_row = 9
+    else:
+        header_row = 1
 
     for column_index, column in enumerate(variant.columns, start=1):
         cell = sheet.cell(row=header_row, column=column_index, value=column.label)
@@ -237,11 +241,13 @@ def _preferred_width(column_key: str) -> float | None:
         "self_transfer": 14,
         "currency_op": 10,
         "processing_date": 14,
+        "aux_summary": 34,
+        "aux_detail": 42,
     }.get(column_key)
 
 
 def _apply_row_heights(sheet, columns, rows, header_row: int) -> None:
-    wrap_keys = {column.key for column in columns if column.key in {"detail", "comment", "details_operation"}}
+    wrap_keys = {column.key for column in columns if column.key in {"detail", "comment", "details_operation", "aux_detail", "aux_summary"}}
     if not wrap_keys:
         return
 
