@@ -31,7 +31,14 @@ NUMBER_ALIGNMENT = Alignment(horizontal="right", vertical="top")
 CENTER_ALIGNMENT = Alignment(horizontal="center", vertical="top")
 
 
-def export_statement(statement: ParsedStatement, variant_key: str, excluded_rows: list[int] | None = None) -> bytes:
+def export_statement(
+    statement: ParsedStatement,
+    variant_key: str,
+    excluded_rows: list[int] | None = None,
+    custom_columns: list[dict] | None = None,
+    custom_rows: list[dict] | None = None,
+) -> bytes:
+    from app.schemas.statement import PreviewColumn  # local import to avoid circular
     variants = {variant.key: variant for variant in build_variants(statement)}
     if variant_key.startswith("template::"):
         template_id = variant_key.split("template::", maxsplit=1)[1]
@@ -46,7 +53,15 @@ def export_statement(statement: ParsedStatement, variant_key: str, excluded_rows
         raise ValueError("Неизвестный вариант таблицы.")
 
     variant = variants[variant_key]
-    if excluded_rows:
+
+    # Apply custom layout (cell edits, added rows, column renames from inline editor)
+    if custom_columns is not None:
+        variant = variant.model_copy(update={
+            "columns": [PreviewColumn(key=c["key"], label=c["label"], kind=c.get("kind", "text")) for c in custom_columns]
+        })
+    if custom_rows is not None:
+        variant = variant.model_copy(update={"rows": custom_rows})
+    elif excluded_rows:
         excluded_set = set(excluded_rows)
         variant = variant.model_copy(update={
             "rows": [r for i, r in enumerate(variant.rows, start=1) if i not in excluded_set]

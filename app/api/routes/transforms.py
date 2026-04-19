@@ -124,7 +124,13 @@ async def get_session_preview(session_id: str) -> PreviewResponse:
 async def export_transform(request: ExportRequest) -> StreamingResponse:
     try:
         statement = load_session(request.session_id)
-        workbook_bytes = export_statement(statement, request.variant_key, excluded_rows=request.excluded_rows or [])
+        workbook_bytes = export_statement(
+            statement,
+            request.variant_key,
+            excluded_rows=request.excluded_rows or [],
+            custom_columns=request.custom_columns,
+            custom_rows=request.custom_rows,
+        )
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:

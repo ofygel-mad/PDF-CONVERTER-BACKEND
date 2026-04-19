@@ -121,6 +121,8 @@ class ExportRequest(BaseModel):
     session_id: str
     variant_key: str
     excluded_rows: list[int] = []
+    custom_columns: list[dict] | None = None
+    custom_rows: list[dict] | None = None
 
 
 class ExportCsvRequest(BaseModel):
