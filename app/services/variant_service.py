@@ -332,6 +332,7 @@ def _build_kaspi_business_variants(transactions) -> list[PreviewVariant]:
 
 
 def _build_halyk_fiz_variants(transactions) -> list[PreviewVariant]:
+    normalized = _merge_halyk_usd_to_kzt(transactions)
     return [
         PreviewVariant(
             key="halyk_fiz_classic",
@@ -357,11 +358,80 @@ def _build_halyk_fiz_variants(transactions) -> list[PreviewVariant]:
                     "comment":         row.comment,
                     "direction":       row.direction,
                 }
-                for row in transactions
+                for row in normalized
             ],
             group=PRIMARY_GROUP,
         ),
     ]
+
+
+def _parse_halyk_date_key(date_str: str):
+    from datetime import datetime
+    for fmt in ("%d.%m.%y", "%d.%m.%Y"):
+        try:
+            return datetime.strptime(date_str, fmt)
+        except ValueError:
+            continue
+    from datetime import datetime as dt
+    return dt.min
+
+
+def _merge_halyk_usd_to_kzt(transactions) -> list:
+    """
+    Match Автоконвертация расход-KZT rows to their USD purchases (FIFO by date).
+    Replace USD expense with proportional KZT equivalent. Drop all autoconv rows.
+    """
+    kzt_conversions = []  # (date_str, usd_amount, kzt_cost)
+    regular = []
+
+    for tx in transactions:
+        if tx.operation == "autoconv":
+            if tx.expense is not None and tx.expense > 0:
+                try:
+                    usd_amount = abs(float(tx.note.split("fx:")[1])) if tx.note and "fx:" in tx.note else 0.0
+                except (ValueError, IndexError):
+                    usd_amount = 0.0
+                if usd_amount > 0:
+                    kzt_conversions.append((tx.date, usd_amount, tx.expense))
+        else:
+            regular.append(tx)
+
+    if not kzt_conversions:
+        return regular
+
+    result = list(regular)
+    pending = [
+        (i, tx) for i, tx in enumerate(result)
+        if tx.currency_op in ("USD", "EUR") and tx.direction == "outflow"
+    ]
+
+    # Sort by real calendar date (DD.MM.YY strings don't sort lexicographically)
+    for conv_date, conv_usd, conv_kzt in sorted(kzt_conversions, key=lambda x: _parse_halyk_date_key(x[0])):
+        conv_dt = _parse_halyk_date_key(conv_date)
+        matched = []
+        running = 0.0
+        for pos, (ri, tx) in enumerate(pending):
+            # Only consider purchases on or before conversion date
+            if _parse_halyk_date_key(tx.date) > conv_dt:
+                continue
+            usd = tx.expense or 0.0
+            if running + usd <= conv_usd + 0.01:
+                matched.append((pos, ri, tx, usd))
+                running += usd
+                if abs(running - conv_usd) < 0.01:
+                    break
+
+        if not matched or running < 0.005:
+            continue
+
+        for _, ri, tx, usd in matched:
+            kzt = round(conv_kzt * usd / running, 2)
+            result[ri] = tx.model_copy(update={"expense": kzt, "amount": -kzt})
+
+        matched_positions = {pos for pos, _, _, _ in matched}
+        pending = [(ri, tx) for pos, (ri, tx) in enumerate(pending) if pos not in matched_positions]
+
+    return result
 
 
 def _build_ai_variant(transactions) -> PreviewVariant:

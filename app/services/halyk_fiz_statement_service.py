@@ -23,6 +23,7 @@ _AUTOCONV_MARKER = "Автоконвертация"
 _COL_DATE_OP = 0
 _COL_DATE_PROC = 1
 _COL_DESCRIPTION = 2
+_COL_AMOUNT_OP = 3   # Сумма операции в валюте операции (e.g. -11.01 USD)
 _COL_CURRENCY = 4
 _COL_INCOME = 5
 _COL_EXPENSE = 6
@@ -159,21 +160,35 @@ def _row_to_transaction(row: list) -> StatementTransaction | None:
         return None
 
     description = _cell(row, _COL_DESCRIPTION).replace("\n", " ").strip()
-    if _AUTOCONV_MARKER in description:
-        return None
 
     income_raw = _parse_amount(_cell(row, _COL_INCOME))
     expense_raw = _parse_amount(_cell(row, _COL_EXPENSE))
-
     income_val = income_raw if income_raw > 0 else None
     expense_val = abs(expense_raw) if expense_raw < 0 else None
-
     amount = (income_val or 0.0) - (expense_val or 0.0)
-    direction = "inflow" if income_val else "outflow"
-    operation = _derive_operation(description)
+    currency_op = _cell(row, _COL_CURRENCY) or None
     date_short = _normalize_date(date_str)
     processing_date = _normalize_date(_cell(row, _COL_DATE_PROC))
-    currency_op = _cell(row, _COL_CURRENCY) or None
+
+    if _AUTOCONV_MARKER in description:
+        # Store the operation-currency amount in note for later KZT merging
+        op_amount = _parse_amount(_cell(row, _COL_AMOUNT_OP))
+        return StatementTransaction(
+            date=date_short,
+            amount=amount,
+            income=income_val,
+            expense=expense_val,
+            operation="autoconv",
+            detail=description,
+            details_operation=description,
+            direction="outflow" if expense_val else "inflow",
+            currency_op=currency_op,
+            processing_date=processing_date,
+            note=f"fx:{op_amount}",
+        )
+
+    direction = "inflow" if income_val else "outflow"
+    operation = _derive_operation(description)
 
     return StatementTransaction(
         date=date_short,
@@ -268,15 +283,29 @@ def _parse_text_row(chunks: list[str]) -> StatementTransaction | None:
     amount_end = tokens.index(amount_token) if amount_token in tokens else currency_idx - 1
     description = " ".join(tokens[amount_start:amount_end])
 
-    if _AUTOCONV_MARKER in description:
-        return None
-
     amount = (income_val or 0.0) - (expense_val or 0.0)
-    direction = "inflow" if income_val else "outflow"
-    operation = _derive_operation(description)
     date_short = _normalize_date(date_str)
     processing_date = _normalize_date(tokens[1]) if len(tokens) > 1 and _DATE_FULL_RE.match(tokens[1]) else None
     currency_op = tokens[currency_idx]
+
+    if _AUTOCONV_MARKER in description:
+        op_amount = _parse_amount(amount_token)  # tokens[currency_idx - 1] is the op amount
+        return StatementTransaction(
+            date=date_short,
+            amount=amount,
+            income=income_val,
+            expense=expense_val,
+            operation="autoconv",
+            detail=description,
+            details_operation=description,
+            direction="outflow" if expense_val else "inflow",
+            currency_op=currency_op,
+            processing_date=processing_date,
+            note=f"fx:{op_amount}",
+        )
+
+    direction = "inflow" if income_val else "outflow"
+    operation = _derive_operation(description)
 
     return StatementTransaction(
         date=date_short,
