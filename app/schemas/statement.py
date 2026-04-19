@@ -42,6 +42,8 @@ class StatementTransaction(BaseModel):
     document_number: str | None = None
     operation_datetime: str | None = None
     comment: str | None = None
+    currency_op: str | None = None
+    processing_date: str | None = None
     raw_counterparty: str | None = None
     note: str | None = None
     flags: list[str] = Field(default_factory=list)
@@ -118,6 +120,7 @@ class SavePreferenceRequest(BaseModel):
 class ExportRequest(BaseModel):
     session_id: str
     variant_key: str
+    excluded_rows: list[int] = []
 
 
 class ExportCsvRequest(BaseModel):

@@ -336,20 +336,26 @@ def _build_halyk_fiz_variants(transactions) -> list[PreviewVariant]:
         PreviewVariant(
             key="halyk_fiz_classic",
             name="\u0425\u0430\u043b\u044b\u043a \u0424\u0418\u0417",
-            description="\u0414\u0430\u0442\u0430, \u043f\u0440\u0438\u0445\u043e\u0434, \u0440\u0430\u0441\u0445\u043e\u0434 \u0438 \u043e\u043f\u0438\u0441\u0430\u043d\u0438\u0435 \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0438.",
+            description="7 \u043a\u043e\u043b\u043e\u043d\u043e\u043a: \u0434\u0430\u0442\u0430, \u0432\u0430\u043b\u044e\u0442\u0430, \u0434\u0430\u0442\u0430 \u043e\u0431\u0440\u0430\u0431\u043e\u0442\u043a\u0438, \u043e\u043f\u0438\u0441\u0430\u043d\u0438\u0435, \u043f\u0440\u0438\u0445\u043e\u0434, \u0440\u0430\u0441\u0445\u043e\u0434, \u043a\u043e\u043c\u043c\u0435\u043d\u0442\u0430\u0440\u0438\u0439.",
             columns=[
-                PreviewColumn(key="date", label="\u0414\u0430\u0442\u0430"),
-                PreviewColumn(key="income", label="\u041f\u0440\u0438\u0445\u043e\u0434, \u20b8", kind="currency"),
-                PreviewColumn(key="expense", label="\u0420\u0430\u0441\u0445\u043e\u0434, \u20b8", kind="currency"),
-                PreviewColumn(key="detail", label="\u041e\u043f\u0438\u0441\u0430\u043d\u0438\u0435 \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0438"),
+                PreviewColumn(key="date",            label="\u0414\u0430\u0442\u0430"),
+                PreviewColumn(key="currency_op",     label="\u0412\u0430\u043b\u044e\u0442\u0430 \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0438"),
+                PreviewColumn(key="processing_date", label="\u0414\u0430\u0442\u0430 \u043e\u0431\u0440\u0430\u0431\u043e\u0442\u043a\u0438"),
+                PreviewColumn(key="detail",          label="\u041e\u043f\u0438\u0441\u0430\u043d\u0438\u0435 \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0438"),
+                PreviewColumn(key="income",          label="\u041f\u0440\u0438\u0445\u043e\u0434 \u0432 \u0432\u0430\u043b\u044e\u0442\u0435 \u0441\u0447\u0435\u0442\u0430", kind="currency"),
+                PreviewColumn(key="expense",         label="\u0420\u0430\u0441\u0445\u043e\u0434 \u0432 \u0432\u0430\u043b\u044e\u0442\u0435 \u0441\u0447\u0435\u0442\u0430", kind="currency"),
+                PreviewColumn(key="comment",         label="\u041a\u043e\u043c\u043c\u0435\u043d\u0442\u0430\u0440\u0438\u0439"),
             ],
             rows=[
                 {
-                    "date": row.date,
-                    "income": row.income,
-                    "expense": row.expense,
-                    "detail": row.detail,
-                    "direction": row.direction,
+                    "date":            row.date,
+                    "currency_op":     row.currency_op,
+                    "processing_date": row.processing_date,
+                    "detail":          row.detail,
+                    "income":          row.income,
+                    "expense":         row.expense,
+                    "comment":         row.comment,
+                    "direction":       row.direction,
                 }
                 for row in transactions
             ],

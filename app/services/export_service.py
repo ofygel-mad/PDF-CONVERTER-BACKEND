@@ -15,8 +15,8 @@ HEADER_FILL = PatternFill(fill_type="solid", fgColor="1F4E79")
 HEADER_FONT = Font(color="FFFFFF", bold=True)
 ROW_FILL_ODD = PatternFill(fill_type="solid", fgColor="FFFFFF")
 ROW_FILL_EVEN = PatternFill(fill_type="solid", fgColor="F6F9FC")
-INFLOW_FILL = PatternFill(fill_type="solid", fgColor="DDF0E4")
-OUTFLOW_FILL = PatternFill(fill_type="solid", fgColor="FBE3DE")
+INFLOW_FILL = PatternFill(fill_type="solid", fgColor="E8F5E9")
+OUTFLOW_FILL = PatternFill(fill_type="solid", fgColor="FFF0F0")
 TITLE_FONT = Font(bold=True, size=14)
 LABEL_FONT = Font(bold=True)
 SUBTLE_BORDER = Border(
@@ -31,7 +31,7 @@ NUMBER_ALIGNMENT = Alignment(horizontal="right", vertical="top")
 CENTER_ALIGNMENT = Alignment(horizontal="center", vertical="top")
 
 
-def export_statement(statement: ParsedStatement, variant_key: str) -> bytes:
+def export_statement(statement: ParsedStatement, variant_key: str, excluded_rows: list[int] | None = None) -> bytes:
     variants = {variant.key: variant for variant in build_variants(statement)}
     if variant_key.startswith("template::"):
         template_id = variant_key.split("template::", maxsplit=1)[1]
@@ -46,6 +46,11 @@ def export_statement(statement: ParsedStatement, variant_key: str) -> bytes:
         raise ValueError("Неизвестный вариант таблицы.")
 
     variant = variants[variant_key]
+    if excluded_rows:
+        excluded_set = set(excluded_rows)
+        variant = variant.model_copy(update={
+            "rows": [r for i, r in enumerate(variant.rows, start=1) if i not in excluded_set]
+        })
     workbook = Workbook()
     sheet = workbook.active
     sheet.title = "Preview Export"
@@ -208,9 +213,11 @@ def _preferred_width(column_key: str) -> float | None:
         "flow_group": 22,
         "bucket": 20,
         "detail": 28,
-        "comment": 54,
+        "comment": 32,
         "counterparty_type": 18,
         "self_transfer": 14,
+        "currency_op": 10,
+        "processing_date": 14,
     }.get(column_key)
 
 
@@ -266,6 +273,6 @@ def _cell_fill(
 
 
 def _freeze_panes_for_variant(variant_key: str, header_row: int) -> str | None:
-    if variant_key.startswith("business_"):
+    if variant_key.startswith("business_") or variant_key.startswith("halyk_"):
         return None
-    return f"A{header_row + 1}"
+    return f"B{header_row + 1}"

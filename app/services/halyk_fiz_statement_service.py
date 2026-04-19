@@ -21,7 +21,9 @@ _AUTOCONV_MARKER = "Автоконвертация"
 
 # Column indices inside the Halyk transaction table
 _COL_DATE_OP = 0
+_COL_DATE_PROC = 1
 _COL_DESCRIPTION = 2
+_COL_CURRENCY = 4
 _COL_INCOME = 5
 _COL_EXPENSE = 6
 
@@ -170,6 +172,8 @@ def _row_to_transaction(row: list) -> StatementTransaction | None:
     direction = "inflow" if income_val else "outflow"
     operation = _derive_operation(description)
     date_short = _normalize_date(date_str)
+    processing_date = _normalize_date(_cell(row, _COL_DATE_PROC))
+    currency_op = _cell(row, _COL_CURRENCY) or None
 
     return StatementTransaction(
         date=date_short,
@@ -180,6 +184,9 @@ def _row_to_transaction(row: list) -> StatementTransaction | None:
         detail=description,
         details_operation=f"{description} / {operation}" if operation else description,
         direction=direction,
+        currency_op=currency_op,
+        processing_date=processing_date,
+        comment=f"Дата тр: {date_short}",
     )
 
 
@@ -267,9 +274,12 @@ def _parse_text_row(chunks: list[str]) -> StatementTransaction | None:
     amount = (income_val or 0.0) - (expense_val or 0.0)
     direction = "inflow" if income_val else "outflow"
     operation = _derive_operation(description)
+    date_short = _normalize_date(date_str)
+    processing_date = _normalize_date(tokens[1]) if len(tokens) > 1 and _DATE_FULL_RE.match(tokens[1]) else None
+    currency_op = tokens[currency_idx]
 
     return StatementTransaction(
-        date=_normalize_date(date_str),
+        date=date_short,
         amount=amount,
         income=income_val,
         expense=expense_val,
@@ -277,6 +287,9 @@ def _parse_text_row(chunks: list[str]) -> StatementTransaction | None:
         detail=description,
         details_operation=f"{description} / {operation}" if operation else description,
         direction=direction,
+        currency_op=currency_op,
+        processing_date=processing_date,
+        comment=f"Дата тр: {date_short}",
     )
 
 
