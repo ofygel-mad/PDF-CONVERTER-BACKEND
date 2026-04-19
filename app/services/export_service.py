@@ -180,10 +180,14 @@ def _write_audit_sheet(sheet, statement: ParsedStatement, variant) -> None:
     transaction_lookup = {index: item for index, item in enumerate(statement.transactions, start=1)}
     row_pointer = 2
     for export_row_number, row in enumerate(variant.rows, start=1):
-        source_row = transaction_lookup.get(export_row_number)
+        source_row_number = row.get("_source_row_number")
+        if isinstance(source_row_number, int):
+            source_row = transaction_lookup.get(source_row_number)
+        else:
+            source_row = transaction_lookup.get(export_row_number)
         for export_column_number, column in enumerate(variant.columns, start=1):
             value = row.get(column.key)
-            provenance = source_row.source if source_row else "derived_variant"
+            provenance = row.get("_provenance") or (source_row.source if source_row else "derived_variant")
             confidence = source_row.source_confidence if source_row else None
             correction = "yes" if source_row and source_row.corrected else "no"
             template_transform = "yes" if variant.template_id else "no"
@@ -191,7 +195,7 @@ def _write_audit_sheet(sheet, statement: ParsedStatement, variant) -> None:
             sheet.cell(row=row_pointer, column=2, value=export_column_number)
             sheet.cell(row=row_pointer, column=3, value=column.label)
             sheet.cell(row=row_pointer, column=4, value=value)
-            sheet.cell(row=row_pointer, column=5, value=export_row_number if source_row else None)
+            sheet.cell(row=row_pointer, column=5, value=source_row_number if source_row else None)
             sheet.cell(row=row_pointer, column=6, value=provenance)
             sheet.cell(row=row_pointer, column=7, value=confidence)
             sheet.cell(row=row_pointer, column=8, value=correction)

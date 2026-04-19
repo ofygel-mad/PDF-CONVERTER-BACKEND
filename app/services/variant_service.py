@@ -326,40 +326,34 @@ def _build_kaspi_business_variants(transactions) -> list[PreviewVariant]:
                 }
                 for row in transactions
             ],
-            group=PRIMARY_GROUP,
+            group=KASPI_BUSINESS_GROUP,
         ),
     ]
 
 
 def _build_halyk_fiz_variants(transactions) -> list[PreviewVariant]:
-    normalized = _merge_halyk_usd_to_kzt(transactions)
     return [
         PreviewVariant(
             key="halyk_fiz_classic",
-            name="\u0425\u0430\u043b\u044b\u043a \u0424\u0418\u0417",
-            description="7 \u043a\u043e\u043b\u043e\u043d\u043e\u043a: \u0434\u0430\u0442\u0430, \u0432\u0430\u043b\u044e\u0442\u0430, \u0434\u0430\u0442\u0430 \u043e\u0431\u0440\u0430\u0431\u043e\u0442\u043a\u0438, \u043e\u043f\u0438\u0441\u0430\u043d\u0438\u0435, \u043f\u0440\u0438\u0445\u043e\u0434, \u0440\u0430\u0441\u0445\u043e\u0434, \u043a\u043e\u043c\u043c\u0435\u043d\u0442\u0430\u0440\u0438\u0439.",
+            name="Halyk FX Detailed",
+            description="Processing-date-first Halyk export with foreign-currency purchases expanded into KZT conversion rows.",
             columns=[
-                PreviewColumn(key="date",            label="\u0414\u0430\u0442\u0430"),
-                PreviewColumn(key="currency_op",     label="\u0412\u0430\u043b\u044e\u0442\u0430 \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0438"),
                 PreviewColumn(key="processing_date", label="\u0414\u0430\u0442\u0430 \u043e\u0431\u0440\u0430\u0431\u043e\u0442\u043a\u0438"),
-                PreviewColumn(key="detail",          label="\u041e\u043f\u0438\u0441\u0430\u043d\u0438\u0435 \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0438"),
-                PreviewColumn(key="income",          label="\u041f\u0440\u0438\u0445\u043e\u0434 \u0432 \u0432\u0430\u043b\u044e\u0442\u0435 \u0441\u0447\u0435\u0442\u0430", kind="currency"),
-                PreviewColumn(key="expense",         label="\u0420\u0430\u0441\u0445\u043e\u0434 \u0432 \u0432\u0430\u043b\u044e\u0442\u0435 \u0441\u0447\u0435\u0442\u0430", kind="currency"),
-                PreviewColumn(key="comment",         label="\u041a\u043e\u043c\u043c\u0435\u043d\u0442\u0430\u0440\u0438\u0439"),
+                PreviewColumn(key="currency_op", label="\u0412\u0430\u043b\u044e\u0442\u0430 \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0438"),
+                PreviewColumn(key="detail", label="\u041e\u043f\u0438\u0441\u0430\u043d\u0438\u0435 \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0438"),
+                PreviewColumn(
+                    key="income",
+                    label="\u041f\u0440\u0438\u0445\u043e\u0434 \u0432 \u0432\u0430\u043b\u044e\u0442\u0435 \u0441\u0447\u0435\u0442\u0430",
+                    kind="currency",
+                ),
+                PreviewColumn(
+                    key="expense",
+                    label="\u0420\u0430\u0441\u0445\u043e\u0434 \u0432 \u0432\u0430\u043b\u044e\u0442\u0435 \u0441\u0447\u0435\u0442\u0430",
+                    kind="currency",
+                ),
+                PreviewColumn(key="comment", label="\u041a\u043e\u043c\u043c\u0435\u043d\u0442\u0430\u0440\u0438\u0439"),
             ],
-            rows=[
-                {
-                    "date":            row.date,
-                    "currency_op":     row.currency_op,
-                    "processing_date": row.processing_date,
-                    "detail":          row.detail,
-                    "income":          row.income,
-                    "expense":         row.expense,
-                    "comment":         row.comment,
-                    "direction":       row.direction,
-                }
-                for row in normalized
-            ],
+            rows=_build_halyk_fiz_rows(transactions),
             group=PRIMARY_GROUP,
         ),
     ]
@@ -432,6 +426,275 @@ def _merge_halyk_usd_to_kzt(transactions) -> list:
         pending = [(ri, tx) for pos, (ri, tx) in enumerate(pending) if pos not in matched_positions]
 
     return result
+
+
+def _build_halyk_fiz_rows(transactions) -> list[dict[str, object | None]]:
+    rows: list[dict[str, object | None]] = []
+    purchase_groups, negative_groups, positive_groups = _plan_halyk_fx_groups(transactions)
+
+    for source_row_number, tx in enumerate(transactions, start=1):
+        if tx.operation != "autoconv":
+            row = _build_halyk_native_row(tx, source_row_number)
+            group = purchase_groups.get(source_row_number)
+            if group is not None:
+                row["comment"] = _append_halyk_summary_comment(row.get("comment"), group["summary"])
+            rows.append(row)
+            continue
+
+        if tx.income is not None:
+            group = positive_groups.get(source_row_number)
+            if group is None:
+                rows.append(_build_halyk_native_row(tx, source_row_number))
+            else:
+                rows.extend(_build_halyk_fx_mirror_rows(group, tx, source_row_number))
+            continue
+
+        if tx.expense is None:
+            rows.append(_build_halyk_native_row(tx, source_row_number))
+            continue
+
+        group = negative_groups.get(source_row_number)
+        if group is None:
+            rows.append(_build_halyk_native_row(tx, source_row_number))
+            continue
+
+        rows.extend(
+            _build_halyk_fx_kzt_rows(
+                matched=group["matched"],
+                allocations=group["allocations"],
+                autoconv_tx=tx,
+                source_row_number=source_row_number,
+                summary=group["summary"],
+            )
+        )
+
+    return rows
+
+
+def _plan_halyk_fx_groups(transactions):
+    foreign_candidates = [
+        {
+            "source_row_number": source_row_number,
+            "transaction": tx,
+        }
+        for source_row_number, tx in enumerate(transactions, start=1)
+        if _is_halyk_foreign_purchase(tx)
+    ]
+    foreign_candidates.sort(
+        key=lambda item: (
+            _parse_halyk_date_key(item["transaction"].date),
+            item["source_row_number"],
+        )
+    )
+
+    positive_queues: defaultdict[tuple[str, float], list[tuple[int, object]]] = defaultdict(list)
+    for source_row_number, tx in enumerate(transactions, start=1):
+        if tx.operation == "autoconv" and tx.income is not None:
+            key = (tx.currency_op or "", round(_extract_halyk_fx_total(tx), 2))
+            positive_queues[key].append((source_row_number, tx))
+
+    purchase_groups: dict[int, dict[str, object]] = {}
+    negative_groups: dict[int, dict[str, object]] = {}
+    positive_groups: dict[int, dict[str, object]] = {}
+
+    for source_row_number, tx in enumerate(transactions, start=1):
+        if tx.operation != "autoconv" or tx.expense is None:
+            continue
+
+        fx_total = _extract_halyk_fx_total(tx)
+        if fx_total <= 0:
+            continue
+
+        matched = _match_halyk_foreign_rows(foreign_candidates, tx, fx_total)
+        if not matched:
+            continue
+
+        key = (tx.currency_op or "", round(fx_total, 2))
+        group = {
+            "matched": matched,
+            "allocations": _allocate_halyk_kzt_amounts(tx.expense, matched),
+            "summary": _build_halyk_fx_summary(tx.currency_op or "", fx_total, tx.expense),
+            "currency": tx.currency_op or "",
+        }
+        negative_groups[source_row_number] = group
+        for item in matched:
+            purchase_groups[item["source_row_number"]] = group
+
+        positive_rows = positive_queues[key]
+        if positive_rows:
+            positive_source_row_number, _positive_tx = positive_rows.pop(0)
+            positive_groups[positive_source_row_number] = group
+
+    return purchase_groups, negative_groups, positive_groups
+
+
+def _build_halyk_native_row(tx, source_row_number: int) -> dict[str, object | None]:
+    return {
+        "processing_date": tx.processing_date or tx.date,
+        "currency_op": _halyk_display_currency(tx),
+        "detail": _clean_halyk_detail(tx.detail),
+        "income": tx.income,
+        "expense": tx.expense,
+        "comment": tx.comment,
+        "direction": tx.direction,
+        "_source_row_number": source_row_number,
+        "_provenance": tx.source,
+    }
+
+
+def _is_halyk_foreign_purchase(tx) -> bool:
+    return tx.operation != "autoconv" and tx.direction == "outflow" and (tx.currency_op or "") != "KZT"
+
+
+def _halyk_display_currency(tx) -> str | None:
+    if tx.operation == "autoconv" and tx.expense is not None:
+        return "KZT"
+    return tx.currency_op
+
+
+def _clean_halyk_detail(detail: str | None) -> str:
+    value = " ".join((detail or "").split())
+    prefix = "\u041e\u043f\u0435\u0440\u0430\u0446\u0438\u044f \u043e\u043f\u043b\u0430\u0442\u044b \u0443 \u043a\u043e\u043c\u043c\u0435\u0440\u0441\u0430\u043d\u0442\u0430 "
+    if value.startswith(prefix):
+        return value[len(prefix):]
+    return value
+
+
+def _extract_halyk_fx_total(tx) -> float:
+    if tx.note and tx.note.startswith("fx:"):
+        try:
+            return abs(float(tx.note.split(":", maxsplit=1)[1]))
+        except ValueError:
+            return 0.0
+    if tx.income is not None:
+        return abs(tx.income)
+    if tx.expense is not None:
+        return abs(tx.expense)
+    return 0.0
+
+
+def _match_halyk_foreign_rows(pending_foreign, autoconv_tx, fx_total: float) -> list[dict[str, object]]:
+    matched: list[dict[str, object]] = []
+    running = 0.0
+    conv_date = _parse_halyk_date_key(autoconv_tx.date)
+    currency = autoconv_tx.currency_op or ""
+
+    for item in pending_foreign:
+        tx = item["transaction"]
+        if (tx.currency_op or "") != currency:
+            continue
+        if _parse_halyk_date_key(tx.date) > conv_date:
+            continue
+        amount = tx.expense or 0.0
+        if running + amount <= fx_total + 0.01:
+            matched.append(item)
+            running += amount
+            if abs(running - fx_total) < 0.01:
+                break
+
+    if not matched or running < 0.005:
+        return []
+
+    matched_ids = {id(item) for item in matched}
+    pending_foreign[:] = [item for item in pending_foreign if id(item) not in matched_ids]
+    return matched
+
+
+def _allocate_halyk_kzt_amounts(total_kzt: float, matched: list[dict[str, object]]) -> list[float]:
+    base_amounts = [(item["transaction"].expense or 0.0) for item in matched]
+    total_foreign = sum(base_amounts)
+    if total_foreign <= 0:
+        return [round(total_kzt, 2)]
+
+    allocations: list[float] = []
+    allocated = 0.0
+    for index, foreign_amount in enumerate(base_amounts, start=1):
+        if index == len(base_amounts):
+            amount = round(total_kzt - allocated, 2)
+        else:
+            amount = round(total_kzt * foreign_amount / total_foreign, 2)
+            allocated += amount
+        allocations.append(amount)
+    return allocations
+
+
+def _build_halyk_fx_summary(currency: str, fx_total: float, kzt_total: float) -> str:
+    return (
+        f"FX total: {_format_halyk_amount(fx_total)} {currency} = "
+        f"{_format_halyk_amount(kzt_total)} KZT"
+    )
+
+
+def _append_halyk_summary_comment(comment: object | None, summary: str) -> str:
+    if comment:
+        return f"{comment}\n{summary}"
+    return summary
+
+
+def _build_halyk_fx_kzt_rows(
+    *,
+    matched: list[dict[str, object]],
+    allocations: list[float],
+    autoconv_tx,
+    source_row_number: int,
+    summary: str,
+) -> list[dict[str, object | None]]:
+    rows: list[dict[str, object | None]] = []
+    for item, allocation in zip(matched, allocations, strict=False):
+        purchase_tx = item["transaction"]
+        rows.append(
+            {
+                "processing_date": autoconv_tx.processing_date or autoconv_tx.date,
+                "currency_op": "KZT",
+                "detail": f"{_clean_halyk_detail(purchase_tx.detail)} (KZT auto-conversion)",
+                "income": None,
+                "expense": allocation,
+                "comment": _append_halyk_summary_comment(
+                    f"\u0414\u0430\u0442\u0430 \u0442\u0440: {autoconv_tx.date}",
+                    summary,
+                ),
+                "direction": "outflow",
+                "_source_row_number": source_row_number,
+                "_provenance": (
+                    f"halyk_fx_kzt:{item['source_row_number']},{source_row_number}"
+                ),
+            }
+        )
+    return rows
+
+
+def _build_halyk_fx_mirror_rows(group: dict[str, object], autoconv_tx, source_row_number: int) -> list[dict[str, object | None]]:
+    rows: list[dict[str, object | None]] = []
+    for item in group["matched"]:
+        purchase_tx = item["transaction"]
+        rows.append(
+            {
+                "processing_date": autoconv_tx.processing_date or autoconv_tx.date,
+                "currency_op": group["currency"],
+                "detail": f"{_clean_halyk_detail(purchase_tx.detail)} (USD mirror)",
+                "income": purchase_tx.expense,
+                "expense": None,
+                "comment": _append_halyk_summary_comment(
+                    f"\u0414\u0430\u0442\u0430 \u0442\u0440: {autoconv_tx.date}",
+                    group["summary"],
+                ),
+                "direction": "inflow",
+                "_source_row_number": source_row_number,
+                "_provenance": (
+                    f"halyk_fx_mirror:{item['source_row_number']},{source_row_number}"
+                ),
+            }
+        )
+    return rows
+
+
+def _format_halyk_amount(value: float) -> str:
+    text = f"{round(value, 2):,.2f}"
+    if text.endswith(".00"):
+        text = text[:-3]
+    elif text.endswith("0"):
+        text = text[:-1]
+    return text.replace(",", " ")
 
 
 def _build_ai_variant(transactions) -> PreviewVariant:

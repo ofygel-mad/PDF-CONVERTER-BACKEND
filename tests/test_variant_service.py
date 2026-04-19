@@ -36,9 +36,9 @@ def test_build_variants_returns_five_views() -> None:
 
     variants = build_variants(statement)
 
-    assert len(variants) == 5
+    assert len(variants) == 2
     assert variants[0].key == "classic_financier"
-    assert variants[3].key == "daily_summary"
+    assert variants[1].key == "operation_split"
 
 
 def test_build_variants_adds_business_plus_group_for_kaspi_business() -> None:
@@ -67,14 +67,180 @@ def test_build_variants_adds_business_plus_group_for_kaspi_business() -> None:
 
     variants = build_variants(statement)
 
-    assert len(variants) == 10
-    assert variants[0].group == "primary"
-    assert variants[5].group == "kaspi_business_plus"
-    assert variants[5].key == "business_compact_classic"
-    assert [column.key for column in variants[5].columns] == [
+    assert len(variants) == 1
+    assert variants[0].group == "kaspi_business_plus"
+    assert variants[0].key == "business_compact_classic"
+    assert [column.key for column in variants[0].columns] == [
         "date",
         "income",
         "expense",
         "detail",
         "comment",
     ]
+
+
+def test_halyk_variant_expands_foreign_purchase_into_fx_rows() -> None:
+    statement = ParsedStatement(
+        metadata=StatementMetadata(
+            source_filename="halyk.pdf",
+            title="Halyk statement",
+            parser_key="halyk_fiz_statement",
+            totals=StatementTotals(),
+        ),
+        transactions=[
+            StatementTransaction(
+                date="27.03.26",
+                amount=-3.67,
+                income=None,
+                expense=3.67,
+                operation="Покупка",
+                detail="Операция оплаты у коммерсанта FACEBK *85TSXE5P62",
+                details_operation="FACEBK *85TSXE5P62 / Покупка",
+                direction="outflow",
+                currency_op="USD",
+                processing_date="29.03.26",
+                comment="Дата тр: 27.03.26",
+            ),
+            StatementTransaction(
+                date="27.03.26",
+                amount=-7.34,
+                income=None,
+                expense=7.34,
+                operation="Покупка",
+                detail="Операция оплаты у коммерсанта FACEBK *R4J2AGRP62",
+                details_operation="FACEBK *R4J2AGRP62 / Покупка",
+                direction="outflow",
+                currency_op="USD",
+                processing_date="29.03.26",
+                comment="Дата тр: 27.03.26",
+            ),
+            StatementTransaction(
+                date="28.03.26",
+                amount=-5349.76,
+                income=None,
+                expense=5349.76,
+                operation="autoconv",
+                detail="Автоконвертация дополнительной суммы по прошедшим операциям",
+                details_operation="Автоконвертация дополнительной суммы по прошедшим операциям",
+                direction="outflow",
+                currency_op="USD",
+                processing_date="28.03.26",
+                note="fx:-11.01",
+            ),
+            StatementTransaction(
+                date="28.03.26",
+                amount=11.01,
+                income=11.01,
+                expense=None,
+                operation="autoconv",
+                detail="Автоконвертация дополнительной суммы по прошедшим операциям",
+                details_operation="Автоконвертация дополнительной суммы по прошедшим операциям",
+                direction="inflow",
+                currency_op="USD",
+                processing_date="28.03.26",
+                note="fx:11.01",
+            ),
+        ],
+    )
+
+    variants = build_variants(statement)
+
+    assert len(variants) == 1
+    variant = variants[0]
+    assert [column.key for column in variant.columns] == [
+        "processing_date",
+        "currency_op",
+        "detail",
+        "income",
+        "expense",
+        "comment",
+    ]
+    assert len(variant.rows) == 6
+
+    purchase_rows = [row for row in variant.rows if row["detail"] in {"FACEBK *85TSXE5P62", "FACEBK *R4J2AGRP62"}]
+    assert len(purchase_rows) == 2
+    assert all("FX total: 11.01 USD = 5 349.76 KZT" in str(row["comment"]) for row in purchase_rows)
+
+    kzt_rows = [row for row in variant.rows if "(KZT auto-conversion)" in str(row["detail"])]
+    assert len(kzt_rows) == 2
+    assert sum(float(row["expense"]) for row in kzt_rows) == 5349.76
+
+    mirror_rows = [row for row in variant.rows if "(USD mirror)" in str(row["detail"])]
+    assert len(mirror_rows) == 2
+    assert sum(float(row["income"]) for row in mirror_rows) == 11.01
+
+
+def test_halyk_variant_matches_positive_autoconv_that_arrives_earlier() -> None:
+    statement = ParsedStatement(
+        metadata=StatementMetadata(
+            source_filename="halyk.pdf",
+            title="Halyk statement",
+            parser_key="halyk_fiz_statement",
+            totals=StatementTotals(),
+        ),
+        transactions=[
+            StatementTransaction(
+                date="28.03.26",
+                amount=-2.98,
+                income=None,
+                expense=2.98,
+                operation="Покупка",
+                detail="Операция оплаты у коммерсанта FACEBK *Y9MFSG5Q62",
+                details_operation="FACEBK *Y9MFSG5Q62 / Покупка",
+                direction="outflow",
+                currency_op="USD",
+                processing_date="30.03.26",
+                comment="Дата тр: 28.03.26",
+            ),
+            StatementTransaction(
+                date="29.03.26",
+                amount=8.94,
+                income=8.94,
+                expense=None,
+                operation="autoconv",
+                detail="Автоконвертация дополнительной суммы по прошедшим операциям",
+                details_operation="Автоконвертация дополнительной суммы по прошедшим операциям",
+                direction="inflow",
+                currency_op="USD",
+                processing_date="29.03.26",
+                note="fx:8.94",
+            ),
+            StatementTransaction(
+                date="29.03.26",
+                amount=-5.96,
+                income=None,
+                expense=5.96,
+                operation="Покупка",
+                detail="Операция оплаты у коммерсанта FACEBK *GWGUKGVP62",
+                details_operation="FACEBK *GWGUKGVP62 / Покупка",
+                direction="outflow",
+                currency_op="USD",
+                processing_date="30.03.26",
+                comment="Дата тр: 29.03.26",
+            ),
+            StatementTransaction(
+                date="29.03.26",
+                amount=-4343.95,
+                income=None,
+                expense=4343.95,
+                operation="autoconv",
+                detail="Автоконвертация дополнительной суммы по прошедшим операциям",
+                details_operation="Автоконвертация дополнительной суммы по прошедшим операциям",
+                direction="outflow",
+                currency_op="USD",
+                processing_date="29.03.26",
+                note="fx:-8.94",
+            ),
+        ],
+    )
+
+    variant = build_variants(statement)[0]
+
+    assert len(variant.rows) == 6
+    assert len([row for row in variant.rows if "(KZT auto-conversion)" in str(row["detail"])]) == 2
+    assert len([row for row in variant.rows if "(USD mirror)" in str(row["detail"])]) == 2
+    assert all(
+        "FX total: 8.94 USD = 4 343.95 KZT" in str(row["comment"])
+        for row in variant.rows
+        if "FACEBK *" in str(row["detail"])
+    )
