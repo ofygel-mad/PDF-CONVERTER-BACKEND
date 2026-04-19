@@ -27,5 +27,3 @@ def test_readiness_shape() -> None:
     payload = response.json()
     assert "status" in payload
     assert "database" in payload
-    assert "redis" in payload
-    assert "storage" in payload

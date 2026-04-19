@@ -71,3 +71,10 @@ def test_build_variants_adds_business_plus_group_for_kaspi_business() -> None:
     assert variants[0].group == "primary"
     assert variants[5].group == "kaspi_business_plus"
     assert variants[5].key == "business_compact_classic"
+    assert [column.key for column in variants[5].columns] == [
+        "date",
+        "income",
+        "expense",
+        "detail",
+        "comment",
+    ]

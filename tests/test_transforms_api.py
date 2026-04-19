@@ -243,7 +243,13 @@ def test_kaspi_business_statement_preview_builds_compact_variant() -> None:
 
     compact_variant = next(item for item in payload["variants"] if item["key"] == "business_compact_classic")
     assert compact_variant["group"] == "kaspi_business_plus"
-    assert compact_variant["rows"][0]["document_number"] == "10232853"
+    assert [column["key"] for column in compact_variant["columns"]] == [
+        "date",
+        "income",
+        "expense",
+        "detail",
+        "comment",
+    ]
     assert compact_variant["rows"][0]["date"] == "03.04.2026"
     assert compact_variant["rows"][0]["expense"] == 500000
     assert compact_variant["rows"][0]["detail"] == "Мийрибек Азизулы У."

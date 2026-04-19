@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import os
 from datetime import UTC, datetime
 from io import BytesIO
 from typing import Any
 
-from fastapi import APIRouter, BackgroundTasks, File, HTTPException, UploadFile
+from fastapi import APIRouter, File, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 
 from app.schemas.statement import (
@@ -13,11 +12,9 @@ from app.schemas.statement import (
     AppliedRuleInfo,
     CorrectionMemoryEntry,
     CreateOnboardingProjectRequest,
-    CreatePreviewJobResponse,
     CreateTemplateRequest,
     ExportCsvRequest,
     ExportRequest,
-    JobSummary,
     MaterializeOCRReviewRequest,
     OCRMappingTemplate,
     OCRRuleManagerSnapshot,
@@ -39,7 +36,6 @@ from app.services.document_service import (
     parse_statement_with_diagnostics,
 )
 from app.services.export_service import export_statement, export_statement_csv
-from app.services.job_service import create_preview_job, get_job, list_jobs
 from app.services.ocr_mapping_template_service import (
     compare_ocr_mapping_template_versions,
     find_best_ocr_mapping_match,
@@ -74,7 +70,6 @@ from app.services.session_service import (
 from app.services.template_service import create_template, list_templates, update_template
 from app.services.variant_service import apply_template_to_variant, build_template_seed, build_variants
 from app.services.vision_service import get_vision_status
-from app.workers.tasks import preview_transform_job
 
 router = APIRouter(prefix="/transforms")
 
@@ -83,7 +78,7 @@ router = APIRouter(prefix="/transforms")
 async def preview_transform(file: UploadFile = File(...)) -> PreviewResponse:
     content = await file.read()
     if not content:
-        raise HTTPException(status_code=400, detail="Файл пустой.")
+        raise HTTPException(status_code=400, detail="Р¤Р°Р№Р» РїСѓСЃС‚РѕР№.")
 
     try:
         statement, parser_matches = parse_statement_with_diagnostics(
@@ -99,40 +94,6 @@ async def preview_transform(file: UploadFile = File(...)) -> PreviewResponse:
     session_id = save_session(statement)
     preference = get_preference(statement.metadata.parser_key)
     return _build_preview_response(session_id, statement, preference, parser_matches)
-
-
-@router.post("/jobs/preview", response_model=CreatePreviewJobResponse)
-async def create_preview_transform_job(
-    background_tasks: BackgroundTasks,
-    file: UploadFile = File(...),
-) -> CreatePreviewJobResponse:
-    content = await file.read()
-    if not content:
-        raise HTTPException(status_code=400, detail="Файл пустой.")
-
-    job = create_preview_job(file.filename or "uploaded-document", content)
-    if os.getenv("PYTEST_CURRENT_TEST"):
-        preview_transform_job(job.job_id)
-    else:
-        try:
-            preview_transform_job.delay(job.job_id)
-        except Exception:
-            background_tasks.add_task(preview_transform_job, job.job_id)
-
-    return CreatePreviewJobResponse(job_id=job.job_id, status=job.status)
-
-
-@router.get("/jobs", response_model=list[JobSummary])
-async def get_preview_jobs() -> list[JobSummary]:
-    return list_jobs()
-
-
-@router.get("/jobs/{job_id}", response_model=JobSummary)
-async def get_preview_job(job_id: str) -> JobSummary:
-    try:
-        return get_job(job_id)
-    except FileNotFoundError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @router.get("/sessions/{session_id}", response_model=PreviewResponse)
@@ -370,7 +331,7 @@ async def get_template_seed(session_id: str, variant_key: str):
 
     base_variant = next((variant for variant in build_variants(statement) if variant.key == variant_key), None)
     if base_variant is None:
-        raise HTTPException(status_code=404, detail="Базовый вариант не найден.")
+        raise HTTPException(status_code=404, detail="Р‘Р°Р·РѕРІС‹Р№ РІР°СЂРёР°РЅС‚ РЅРµ РЅР°Р№РґРµРЅ.")
 
     return {
         "session_id": session_id,
@@ -474,7 +435,7 @@ def _build_ocr_review_preview(filename: str, content: bytes) -> PreviewResponse 
                     [
                         ParserMatch(
                             key=statement.metadata.parser_key,
-                            label=f"OCR Auto Mapping · {template.name}",
+                            label=f"OCR Auto Mapping В· {template.name}",
                             score=best_match.score,
                             matched=True,
                         )

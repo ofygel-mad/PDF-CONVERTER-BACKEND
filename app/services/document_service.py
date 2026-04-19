@@ -117,6 +117,11 @@ def _parse_workbook_statement(filename: str, content: bytes) -> ParsedStatement:
 
 
 def _registered_parsers() -> list[ParserDefinition]:
+    from app.services.halyk_fiz_statement_service import (
+        detect_halyk_fiz_statement,
+        parse_halyk_fiz_statement,
+    )
+
     return [
         ParserDefinition(
             key="kaspi_gold_statement",
@@ -129,10 +134,18 @@ def _registered_parsers() -> list[ParserDefinition]:
         ParserDefinition(
             key="kaspi_business_statement",
             label="Kaspi Business Statement",
-            description="Структурированные выписки Kaspi Business в Excel формате.",
+            description="Structured Kaspi Business or Kaspi Pay account statements in Excel format.",
             accepted_extensions=(".xlsx", ".xlsm"),
             detect=_detect_kaspi_business_statement,
             parse=_parse_kaspi_business_statement,
+        ),
+        ParserDefinition(
+            key="halyk_fiz_statement",
+            label="Halyk Bank FIZ Statement",
+            description="Выписки физ. лиц АО Народный Банк Казахстана (Halyk) в PDF-формате.",
+            accepted_extensions=(".pdf",),
+            detect=detect_halyk_fiz_statement,
+            parse=parse_halyk_fiz_statement,
         ),
         ParserDefinition(
             key="ocr_scanned_statement",
@@ -651,33 +664,23 @@ def _value_exists(rows: list[list[object]], row_index: int, column_index: int) -
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# KASPI BUSINESS PARSER - Lazy import to prevent startup issues
+# KASPI BUSINESS PARSER — lazy import, safe at startup
 # ─────────────────────────────────────────────────────────────────────────────
 
 
 def _detect_kaspi_business_statement(filename: str, content: bytes) -> float:
-    """Detect if this is a Kaspi Business statement (Excel only)."""
-    extension = Path(filename).suffix.lower()
-    if extension not in {".xlsx", ".xlsm"}:
+    if Path(filename).suffix.lower() not in {".xlsx", ".xlsm"}:
         return 0.0
-
     try:
-        # Lazy import - only loads when needed to detect Kaspi Business
-        from app.services.kaspi_business_statement import detect_kaspi_business_statement as detect_kaspi_biz
-        return detect_kaspi_biz(content)
+        from app.services.kaspi_business_statement_service import detect_kaspi_business_statement
+        return detect_kaspi_business_statement(content)
     except Exception:
-        # If module fails to load or detect, just return 0 confidence
-        # Other parsers will handle the file instead
         return 0.0
 
 
 def _parse_kaspi_business_statement(filename: str, content: bytes) -> ParsedStatement:
-    """Parse Kaspi Business statement (Excel format)."""
     try:
-        # Lazy import - only loads when actually parsing a Kaspi Business file
-        from app.services.kaspi_business_statement import parse_kaspi_business_statement as parse_kaspi_biz
-        return parse_kaspi_biz(filename, content)
-    except ImportError as exc:
-        raise DocumentParseError("Kaspi Business parser модуль недоступен") from exc
+        from app.services.kaspi_business_statement_service import parse_kaspi_business_statement
+        return parse_kaspi_business_statement(filename, content)
     except Exception as exc:
-        raise DocumentParseError(f"Ошибка при парсинге Kaspi Business выписки: {exc}") from exc
+        raise DocumentParseError(f"Ошибка парсинга Kaspi Business: {exc}") from exc
