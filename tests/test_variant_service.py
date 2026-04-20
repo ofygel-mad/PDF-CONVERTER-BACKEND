@@ -153,29 +153,20 @@ def test_halyk_variant_expands_foreign_purchase_into_fx_rows() -> None:
         "income",
         "expense",
         "comment",
-        "aux_summary",
-        "aux_detail",
     ]
     assert len(variant.rows) == 6
 
     purchase_rows = [row for row in variant.rows if row["detail"] in {"FACEBK *85TSXE5P62", "FACEBK *R4J2AGRP62"}]
     assert len(purchase_rows) == 2
     assert all("(Общий 11,1 usd = в kzt общий 5 349,76)" in str(row["comment"]) for row in purchase_rows)
-    assert all(row["aux_summary"] for row in purchase_rows)
-    assert {row["aux_detail"] for row in purchase_rows} == {"FACEBK *85TSXE5P62", "FACEBK *R4J2AGRP62"}
-
     kzt_rows = [row for row in variant.rows if "- (Авто. Конв) - (общий 5 349,76)" in str(row["detail"])]
     assert len(kzt_rows) == 2
     assert sum(float(row["expense"]) for row in kzt_rows) == 5349.76
     assert all("Дата тр: 28.03.26" in str(row["comment"]) for row in kzt_rows)
-    assert all(row["aux_summary"] for row in kzt_rows)
-    assert all("Автоконвертация дополнительной суммы" in str(row["aux_detail"]) for row in kzt_rows)
 
     currency_rows = [row for row in variant.rows if "- (Авто. Конв) - (общий 11,1)" in str(row["detail"])]
     assert len(currency_rows) == 2
     assert sum(float(row["income"]) for row in currency_rows) == 11.01
-    assert all(row["aux_summary"] for row in currency_rows)
-    assert all("Автоконвертация дополнительной суммы" in str(row["aux_detail"]) for row in currency_rows)
 
 
 def test_halyk_variant_matches_positive_autoconv_that_arrives_earlier() -> None:
@@ -252,4 +243,3 @@ def test_halyk_variant_matches_positive_autoconv_that_arrives_earlier() -> None:
         for row in variant.rows
         if "FACEBK *" in str(row["detail"])
     )
-    assert sum(1 for row in variant.rows if row["aux_detail"] is None) >= 1

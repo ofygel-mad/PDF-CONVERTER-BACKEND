@@ -328,8 +328,6 @@ def _build_halyk_fiz_variants(transactions) -> list[PreviewVariant]:
                     kind="currency",
                 ),
                 PreviewColumn(key="comment", label="\u041a\u043e\u043c\u043c\u0435\u043d\u0442\u0430\u0440\u0438\u0439"),
-                PreviewColumn(key="aux_summary", label=""),
-                PreviewColumn(key="aux_detail", label="\u041e\u043f\u0438\u0441\u0430\u043d\u0438\u0435 \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0438"),
             ],
             rows=_build_halyk_fiz_rows(transactions),
             group=PRIMARY_GROUP,

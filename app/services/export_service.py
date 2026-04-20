@@ -241,13 +241,11 @@ def _preferred_width(column_key: str) -> float | None:
         "self_transfer": 14,
         "currency_op": 10,
         "processing_date": 14,
-        "aux_summary": 34,
-        "aux_detail": 42,
     }.get(column_key)
 
 
 def _apply_row_heights(sheet, columns, rows, header_row: int) -> None:
-    wrap_keys = {column.key for column in columns if column.key in {"detail", "comment", "details_operation", "aux_detail", "aux_summary"}}
+    wrap_keys = {column.key for column in columns if column.key in {"detail", "comment", "details_operation"}}
     if not wrap_keys:
         return
 
