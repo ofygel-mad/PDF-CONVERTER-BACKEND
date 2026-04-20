@@ -9,7 +9,12 @@ from fastapi.responses import StreamingResponse
 
 from app.schemas.statement import (
     AddOnboardingSampleRequest,
+    AdvisorColumnRequest,
+    AdvisorColumnResponse,
+    AnalyzeDiffRequest,
+    AnalyzeDiffResponse,
     AppliedRuleInfo,
+    ConsistencyReport,
     CorrectionMemoryEntry,
     CreateOnboardingProjectRequest,
     CreateTemplateRequest,
@@ -23,7 +28,11 @@ from app.schemas.statement import (
     ParserMatch,
     PreferenceRecord,
     PreviewResponse,
+    ClarifyRequest,
+    ReAnalyzeRequest,
     SavePreferenceRequest,
+    SmartRefineRequest,
+    SmartRefineResponse,
     TransformationTemplate,
     UpdateOCRRuleRequest,
     UpdateRowRequest,
@@ -497,6 +506,237 @@ def _build_ocr_review_preview(filename: str, content: bytes) -> PreviewResponse 
         preference=None,
         default_variant_key=None,
     )
+
+
+# ── Smart Brain endpoints ──────────────────────────────────────────────────────
+
+@router.post("/transforms/advisor/column", response_model=AdvisorColumnResponse)
+async def advisor_column(request: AdvisorColumnRequest) -> AdvisorColumnResponse:
+    """
+    Recommend formulas for a column based on its name and optional sample values.
+    Combines lexical analysis + statistical pattern detection.
+    """
+    from app.services.column_advisor import advise
+    return advise(request)
+
+
+@router.post("/transforms/analyze-diff", response_model=AnalyzeDiffResponse)
+async def analyze_diff(request: AnalyzeDiffRequest) -> AnalyzeDiffResponse:
+    """
+    Reverse-engineer what changes a user made to a variant.
+    Detects formulas, filters, renames from the diff between original and edited rows.
+    """
+    from app.services.session_service import load_session
+    from app.services.variant_service import build_variants
+    from app.services.diff_analyzer import analyze_diff as _analyze
+
+    statement = load_session(request.session_id)
+    variants = {v.key: v for v in build_variants(statement)}
+
+    orig_variant = variants.get(request.original_variant_key)
+    if orig_variant is None:
+        raise HTTPException(status_code=404, detail="Вариант не найден")
+
+    return _analyze(
+        orig_columns=[c.model_dump() for c in orig_variant.columns],
+        orig_rows=list(orig_variant.rows),
+        edit_columns=request.edited_columns,
+        edit_rows=request.edited_rows,
+        user_hint=None,
+    )
+
+
+@router.post("/transforms/re-analyze", response_model=AnalyzeDiffResponse)
+async def re_analyze(request: ReAnalyzeRequest) -> AnalyzeDiffResponse:
+    """
+    Re-analyze diff with a user-provided Russian hint.
+    Routes through Smart NLP engine first; falls back to keyword matching if confidence is low.
+    """
+    from app.services.session_service import load_session
+    from app.services.variant_service import build_variants
+    from app.services.diff_analyzer import analyze_diff as _analyze
+    from app.core.config import settings
+
+    statement = load_session(request.session_id)
+    variants = {v.key: v for v in build_variants(statement)}
+
+    orig_variant = variants.get(request.original_variant_key)
+    if orig_variant is None:
+        raise HTTPException(status_code=404, detail="Вариант не найден")
+
+    base_result = _analyze(
+        orig_columns=[c.model_dump() for c in orig_variant.columns],
+        orig_rows=list(orig_variant.rows),
+        edit_columns=request.edited_columns,
+        edit_rows=request.edited_rows,
+        user_hint=None,
+    )
+
+    if not settings.smart_nlp_enabled:
+        # Use legacy keyword hint path
+        from app.services.diff_analyzer import apply_hint
+        return base_result.model_copy(
+            update={"findings": apply_hint(request.user_hint, base_result.findings)}
+        )
+
+    try:
+        from app.services import smart_correction_service
+        from app.services.nlp.types import SmartContext
+
+        context = SmartContext(
+            columns=request.edited_columns,
+            recent_rows=request.edited_rows[:20],
+            parser_key=statement.metadata.parser_key,
+            target_column_key=request.target_column_key,
+        )
+        refine_result = smart_correction_service.refine(
+            findings=base_result.findings,
+            user_hint=request.user_hint,
+            context=context,
+        )
+        return AnalyzeDiffResponse(
+            findings=refine_result.findings,
+            summary_ru=refine_result.narrative_ru,
+        )
+    except Exception:
+        from app.services.diff_analyzer import apply_hint
+        return base_result.model_copy(
+            update={"findings": apply_hint(request.user_hint, base_result.findings)}
+        )
+
+
+@router.post("/transforms/smart-refine", response_model=SmartRefineResponse)
+async def smart_refine(request: SmartRefineRequest) -> SmartRefineResponse:
+    """
+    Full smart NLP refinement — returns narrative, clarification chips, and confidence.
+    """
+    from app.services.session_service import load_session
+    from app.services.variant_service import build_variants
+    from app.services.diff_analyzer import analyze_diff as _analyze
+    from app.services import smart_correction_service
+    from app.services.nlp.types import SmartContext
+
+    statement = load_session(request.session_id)
+    variants = {v.key: v for v in build_variants(statement)}
+
+    orig_variant = variants.get(request.original_variant_key)
+    if orig_variant is None:
+        raise HTTPException(status_code=404, detail="Вариант не найден")
+
+    base_findings = request.existing_findings
+    if base_findings is None:
+        base_result = _analyze(
+            orig_columns=[c.model_dump() for c in orig_variant.columns],
+            orig_rows=list(orig_variant.rows),
+            edit_columns=request.edited_columns,
+            edit_rows=request.edited_rows,
+            user_hint=None,
+        )
+        base_findings = base_result.findings
+
+    context = SmartContext(
+        columns=request.edited_columns,
+        recent_rows=request.edited_rows[:20],
+        parser_key=statement.metadata.parser_key,
+        target_column_key=request.target_column_key,
+    )
+    result = smart_correction_service.refine(
+        findings=base_findings,
+        user_hint=request.user_hint,
+        context=context,
+    )
+    return SmartRefineResponse(
+        findings=result.findings,
+        narrative_ru=result.narrative_ru,
+        clarifications=result.clarifications,
+        confidence=result.confidence,
+        summary_ru=result.narrative_ru,
+    )
+
+
+@router.post("/transforms/clarify", response_model=SmartRefineResponse)
+async def clarify_intent(request: ClarifyRequest) -> SmartRefineResponse:
+    """
+    User picks one of the clarification choices — re-run pipeline with explicit choice.
+    """
+    from app.services.session_service import load_session
+    from app.services.variant_service import build_variants
+    from app.services.diff_analyzer import analyze_diff as _analyze
+    from app.services import smart_correction_service
+    from app.services.nlp.types import SmartContext
+    from app.schemas.statement import DiffFinding
+
+    statement = load_session(request.session_id)
+    variants = {v.key: v for v in build_variants(statement)}
+
+    orig_variant = variants.get(request.original_variant_key)
+    if orig_variant is None:
+        raise HTTPException(status_code=404, detail="Вариант не найден")
+
+    base_findings = request.existing_findings or []
+    if not base_findings:
+        base_result = _analyze(
+            orig_columns=[c.model_dump() for c in orig_variant.columns],
+            orig_rows=list(orig_variant.rows),
+            edit_columns=request.edited_columns,
+            edit_rows=request.edited_rows,
+            user_hint=None,
+        )
+        base_findings = base_result.findings
+
+    # Apply chosen formula directly (user resolved ambiguity)
+    chosen_hint = f"{request.question_ru} выбор {request.choice_index}"
+    context = SmartContext(
+        columns=request.edited_columns,
+        recent_rows=request.edited_rows[:20],
+        parser_key=statement.metadata.parser_key,
+        target_column_key=request.target_column_key,
+    )
+    result = smart_correction_service.refine(
+        findings=base_findings,
+        user_hint=chosen_hint,
+        context=context,
+    )
+    return SmartRefineResponse(
+        findings=result.findings,
+        narrative_ru=result.narrative_ru,
+        clarifications=[],
+        confidence=result.confidence,
+        summary_ru=result.narrative_ru,
+    )
+
+
+@router.get("/transforms/consistency/{session_id}/{variant_key:path}", response_model=ConsistencyReport)
+async def check_consistency(session_id: str, variant_key: str) -> ConsistencyReport:
+    """
+    Run consistency checks on a variant's rows.
+    Detects balance mismatches, duplicates, date gaps, anomalies.
+    """
+    from app.services.session_service import load_session
+    from app.services.variant_service import build_variants
+    from app.services.consistency_checker import check_rows
+
+    statement = load_session(session_id)
+    variants = {v.key: v for v in build_variants(statement)}
+    variant = variants.get(variant_key)
+    if variant is None:
+        raise HTTPException(status_code=404, detail="Вариант не найден")
+
+    meta = statement.metadata
+    return check_rows(
+        rows=list(variant.rows),
+        reported_income=getattr(meta, "total_topup", None),
+        reported_expense=getattr(meta, "total_purchase", None),
+    )
+
+
+@router.post("/transforms/validate-formula")
+async def validate_formula(body: dict) -> dict:
+    """Quick formula syntax check. Returns {valid: bool, error: str|null}."""
+    from app.services.formula_engine import validate_formula as _validate
+    formula = body.get("formula", "")
+    ok, err = _validate(formula)
+    return {"valid": ok, "error": err}
 
 
 def _build_rule_reason(best_match: Any) -> str:

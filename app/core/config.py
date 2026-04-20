@@ -40,6 +40,17 @@ class Settings(BaseSettings):
     azure_document_intelligence_endpoint: str | None = None
     azure_document_intelligence_key: str | None = None
 
+    # Smart NLP correction engine
+    smart_nlp_enabled: bool = True
+    smart_nlp_model_path: str = "app/data/nlp/rubert_tiny2.onnx"
+    smart_nlp_confidence_threshold: float = 0.75
+    smart_nlp_clarify_threshold: float = 0.45
+    smart_nlp_cache_size: int = 256
+
+    # Scanned document OCR
+    scan_max_pages: int = 50
+    scan_min_quality_score: float = 0.25
+
     @field_validator(
         "app_name",
         "environment",
@@ -50,6 +61,7 @@ class Settings(BaseSettings):
         "database_url",
         "azure_document_intelligence_endpoint",
         "azure_document_intelligence_key",
+        "smart_nlp_model_path",
         mode="before",
     )
     @classmethod

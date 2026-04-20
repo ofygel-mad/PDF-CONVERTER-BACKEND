@@ -50,6 +50,13 @@ def _run_migrations() -> None:
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    # Warm up Smart NLP Correction Engine (fails silently if models unavailable)
+    try:
+        from app.services import smart_correction_service
+        smart_correction_service.warmup()
+    except Exception as exc:
+        log.warning("smart_correction_service warmup skipped: %s", exc)
+
     log.info("Application startup complete")
     yield
 

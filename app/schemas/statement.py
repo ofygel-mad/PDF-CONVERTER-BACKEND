@@ -282,6 +282,9 @@ class TemplateColumnConfig(BaseModel):
     label: str
     kind: str = "text"
     enabled: bool = True
+    formula: str | None = None        # e.g. "{amount} * 0.12"
+    source_field: str | None = None   # direct mapping to transaction field
+    ai_description: str | None = None # human-readable explanation of this column's logic
 
 
 class TransformationTemplate(BaseModel):
@@ -353,6 +356,123 @@ class OCRRuleVersionDiff(BaseModel):
 
 class UpdateOCRRuleRequest(BaseModel):
     is_active: bool
+
+
+# ── Smart Brain schemas ────────────────────────────────────────────────────────
+
+class ColumnRecommendation(BaseModel):
+    formula: str
+    explanation: str
+    confidence: float              # 0.0 – 1.0
+    category: str                  # "formula" | "mapping" | "aggregate" | "warning"
+    source: str = "lexical"        # "lexical" | "pattern" | "consistency"
+
+
+class AdvisorColumnRequest(BaseModel):
+    column_name: str
+    parser_key: str
+    available_fields: list[str] = Field(default_factory=list)
+    # Optionally pass sample values so pattern_detector can run
+    sample_values: list[float | None] = Field(default_factory=list)
+    context_columns: dict[str, list[float | None]] = Field(default_factory=dict)
+
+
+class AdvisorColumnResponse(BaseModel):
+    recommendations: list[ColumnRecommendation]
+
+
+class DiffFinding(BaseModel):
+    type: str           # "label_change" | "column_removed" | "column_added" |
+                        #  "cell_changed" | "row_removed" | "formula_detected" | "filter_detected"
+    column_key: str | None = None
+    detected_formula: str | None = None
+    confidence: float = 1.0
+    explanation_ru: str
+    intent: str | None = None            # smart NLP intent id, e.g. "fx_convert"
+    needs_clarification: bool = False    # True → render as clarify chips in UI
+
+
+class AnalyzeDiffRequest(BaseModel):
+    session_id: str
+    original_variant_key: str
+    edited_columns: list[dict]
+    edited_rows: list[dict]
+
+
+class AnalyzeDiffResponse(BaseModel):
+    findings: list[DiffFinding]
+    summary_ru: str
+
+
+class ReAnalyzeRequest(BaseModel):
+    session_id: str
+    original_variant_key: str
+    edited_columns: list[dict]
+    edited_rows: list[dict]
+    user_hint: str
+    target_column_key: str | None = None     # column the user clicked "Уточнить" on
+    existing_findings: list[DiffFinding] | None = None  # prior analysis results
+
+
+class FormulaPatch(BaseModel):
+    column_key: str
+    formula: str | None = None
+    source_field: str | None = None
+    new_label: str | None = None
+    after_key: str | None = None
+    filter_direction: str | None = None
+    filter_threshold: float | None = None
+    filter_keyword: str | None = None
+
+
+class ClarifyQuestion(BaseModel):
+    question_ru: str
+    choices: list[str] = Field(default_factory=list)
+    choice_formulas: list[str] = Field(default_factory=list)
+    column_key: str | None = None
+
+
+class SmartRefineRequest(BaseModel):
+    session_id: str
+    original_variant_key: str
+    edited_columns: list[dict]
+    edited_rows: list[dict]
+    user_hint: str
+    target_column_key: str | None = None
+    existing_findings: list[DiffFinding] | None = None
+
+
+class SmartRefineResponse(BaseModel):
+    findings: list[DiffFinding]
+    narrative_ru: str
+    clarifications: list[ClarifyQuestion] = Field(default_factory=list)
+    confidence: float
+    summary_ru: str
+
+
+class ClarifyRequest(BaseModel):
+    session_id: str
+    original_variant_key: str
+    edited_columns: list[dict]
+    edited_rows: list[dict]
+    user_hint: str
+    target_column_key: str | None = None
+    existing_findings: list[DiffFinding] | None = None
+    choice_index: int
+    question_ru: str
+
+
+class ConsistencyWarning(BaseModel):
+    type: str           # "balance_mismatch" | "duplicate_row" | "date_gap" | "anomaly" | "currency"
+    severity: str       # "low" | "medium" | "high"
+    message_ru: str
+    affected_rows: list[int] = Field(default_factory=list)
+    affected_column: str | None = None
+
+
+class ConsistencyReport(BaseModel):
+    warnings: list[ConsistencyWarning]
+    is_clean: bool
 
 
 class OCRRuleManagerSnapshot(BaseModel):

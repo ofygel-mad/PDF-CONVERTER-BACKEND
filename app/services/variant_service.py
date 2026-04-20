@@ -8,6 +8,7 @@ from app.schemas.statement import (
     PreviewVariant,
     TransformationTemplate,
 )
+from app.services import formula_engine
 # kaspi_business_statement_service imported lazily inside _build_kaspi_business_variants
 
 PRIMARY_GROUP = "primary"
@@ -38,9 +39,28 @@ def apply_template_to_variant(
     configured_columns = [column for column in template.columns if column.enabled]
     column_order = [column.key for column in configured_columns]
 
+    # Pre-compute formula results for formula columns (full column pass for running_sum)
+    formula_columns = {
+        col.key: col.formula
+        for col in configured_columns
+        if col.formula and col.formula.strip()
+    }
+    formula_results: dict[str, list[formula_engine.FormulaResult]] = {}
+    for col_key, formula in formula_columns.items():
+        formula_results[col_key] = formula_engine.evaluate_column(formula, [
+            {**row, "direction": row.get("direction", "")}
+            for row in variant.rows
+        ])
+
     rows = []
-    for row in variant.rows:
-        shaped_row = {key: row.get(key) for key in column_order}
+    for i, row in enumerate(variant.rows):
+        shaped_row = {}
+        for key in column_order:
+            if key in formula_results:
+                res = formula_results[key][i]
+                shaped_row[key] = res.value if res.error is None else None
+            else:
+                shaped_row[key] = row.get(key)
         if "direction" in row:
             shaped_row["direction"] = row["direction"]
         rows.append(shaped_row)
