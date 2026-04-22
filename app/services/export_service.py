@@ -39,6 +39,44 @@ def export_statement(
     custom_columns: list[dict] | None = None,
     custom_rows: list[dict] | None = None,
 ) -> bytes:
+    variant = _resolve_variant(
+        statement,
+        variant_key,
+        excluded_rows=excluded_rows,
+        custom_columns=custom_columns,
+        custom_rows=custom_rows,
+    )
+
+    workbook = Workbook()
+    sheet = workbook.active
+    primary_title = "Preview Export"
+    if variant.key == "operation_split":
+        primary_title = "Операций"
+    elif statement.metadata.parser_key == "kaspi_gold_statement":
+        primary_title = "Выписка"
+    _write_variant_sheet(sheet, statement, variant, primary_title)
+
+    if statement.metadata.parser_key == "kaspi_gold_statement" and variant.key != "operation_split":
+        operations_variant = _resolve_variant(statement, "operation_split")
+        operations_sheet = workbook.create_sheet("Операций")
+        _write_variant_sheet(operations_sheet, statement, operations_variant, "Операций")
+
+    audit_sheet = workbook.create_sheet("Audit Trail")
+    _write_audit_sheet(audit_sheet, statement, variant)
+
+    stream = BytesIO()
+    workbook.save(stream)
+    return stream.getvalue()
+
+
+def _resolve_variant(
+    statement: ParsedStatement,
+    variant_key: str,
+    *,
+    excluded_rows: list[int] | None = None,
+    custom_columns: list[dict] | None = None,
+    custom_rows: list[dict] | None = None,
+):
     from app.schemas.statement import PreviewColumn  # local import to avoid circular
     variants = {variant.key: variant for variant in build_variants(statement)}
     if variant_key.startswith("template::"):
@@ -96,10 +134,11 @@ def export_statement(
         variant = variant.model_copy(update={
             "rows": [r for i, r in enumerate(variant.rows, start=1) if i not in excluded_set]
         })
-    workbook = Workbook()
-    sheet = workbook.active
-    sheet.title = "Preview Export"
-    audit_sheet = workbook.create_sheet("Audit Trail")
+    return variant
+
+
+def _write_variant_sheet(sheet, statement: ParsedStatement, variant, title: str) -> None:
+    sheet.title = _sanitize_sheet_title(title)
 
     include_metadata = statement.metadata.parser_key != "halyk_fiz_statement"
     if include_metadata:
@@ -132,11 +171,11 @@ def export_statement(
     )
     sheet.sheet_view.showGridLines = False
 
-    _write_audit_sheet(audit_sheet, statement, variant)
 
-    stream = BytesIO()
-    workbook.save(stream)
-    return stream.getvalue()
+def _sanitize_sheet_title(title: str) -> str:
+    cleaned = "".join(char for char in title if char not in '[]:*?/\\')
+    cleaned = cleaned.strip() or "Sheet"
+    return cleaned[:31]
 
 
 def _write_metadata(sheet, statement: ParsedStatement, column_count: int) -> None:

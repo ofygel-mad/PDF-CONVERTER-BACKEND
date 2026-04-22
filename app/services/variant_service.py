@@ -116,6 +116,36 @@ def _build_kaspi_gold_variants(transactions) -> list[PreviewVariant]:
             ],
             group=PRIMARY_GROUP,
         ),
+        PreviewVariant(
+            key="operation_split",
+            name="\u041e\u043f\u0435\u0440\u0430\u0446\u0438\u0439",
+            description=(
+                "\u041e\u0442\u0434\u0435\u043b\u044c\u043d\u044b\u0439 \u0432\u0438\u0434 "
+                "\u0434\u043b\u044f \u0444\u0438\u0437\u043b\u0438\u0446: \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u044f "
+                "\u0438 \u0434\u0435\u0442\u0430\u043b\u0438 \u0432 \u0440\u0430\u0437\u043d\u044b\u0445 "
+                "\u043a\u043e\u043b\u043e\u043d\u043a\u0430\u0445 \u0431\u0435\u0437 \u043a\u043e\u043b\u043e\u043d\u043a\u0438 "
+                "\u043d\u0435\u0442\u0442\u043e."
+            ),
+            columns=[
+                PreviewColumn(key="date", label="\u0414\u0430\u0442\u0430"),
+                PreviewColumn(key="operation", label="\u041e\u043f\u0435\u0440\u0430\u0446\u0438\u044f"),
+                PreviewColumn(key="detail", label="\u0414\u0435\u0442\u0430\u043b\u0438"),
+                PreviewColumn(key="income", label="\u041f\u0440\u0438\u0445\u043e\u0434, \u20b8", kind="currency"),
+                PreviewColumn(key="expense", label="\u0420\u0430\u0441\u0445\u043e\u0434, \u20b8", kind="currency"),
+            ],
+            rows=[
+                {
+                    "date": row.date,
+                    "operation": row.operation,
+                    "detail": row.detail,
+                    "income": row.income,
+                    "expense": row.expense,
+                    "direction": row.direction,
+                }
+                for row in transactions
+            ],
+            group=PRIMARY_GROUP,
+        ),
     ]
 
 

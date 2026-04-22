@@ -2,7 +2,7 @@ from app.schemas.statement import ParsedStatement, StatementMetadata, StatementT
 from app.services.variant_service import build_variants
 
 
-def test_build_variants_returns_five_views() -> None:
+def test_build_variants_returns_kaspi_gold_views() -> None:
     statement = ParsedStatement(
         metadata=StatementMetadata(
             source_filename="sample.pdf",
@@ -36,8 +36,16 @@ def test_build_variants_returns_five_views() -> None:
 
     variants = build_variants(statement)
 
-    assert len(variants) == 1
+    assert len(variants) == 2
     assert variants[0].key == "classic_financier"
+    assert variants[1].key == "operation_split"
+    assert [column.key for column in variants[1].columns] == [
+        "date",
+        "operation",
+        "detail",
+        "income",
+        "expense",
+    ]
 
 
 def test_build_variants_adds_business_plus_group_for_kaspi_business() -> None:
